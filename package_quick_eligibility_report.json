@@ -1,0 +1,81 @@
+{
+  "totalQuestoes": 200,
+  "elegiveisPelaRegraAtual": 166,
+  "excluidasPelaRegraAtual": 34,
+  "provas": [
+    {
+      "prova": "Enfermeiro · São Lourenço do Sul · 2026",
+      "total": 40,
+      "comTextoBase": 6,
+      "referenciaExplicita": 8,
+      "elegiveisPelaRegraAtual": 32,
+      "textoAssociadoSemReferenciaExplicita": 0,
+      "exemplosAssociadosSemReferencia": []
+    },
+    {
+      "prova": "ENFERMEIRO · ARAQUARI · 2026",
+      "total": 50,
+      "comTextoBase": 0,
+      "referenciaExplicita": 7,
+      "elegiveisPelaRegraAtual": 43,
+      "textoAssociadoSemReferenciaExplicita": 0,
+      "exemplosAssociadosSemReferencia": []
+    },
+    {
+      "prova": "ENFERMEIRO · CAXIAS DO SUL · 2026",
+      "total": 50,
+      "comTextoBase": 0,
+      "referenciaExplicita": 12,
+      "elegiveisPelaRegraAtual": 38,
+      "textoAssociadoSemReferenciaExplicita": 0,
+      "exemplosAssociadosSemReferencia": []
+    },
+    {
+      "prova": "Enfermeiro · Palma Sola · 2025",
+      "total": 20,
+      "comTextoBase": 0,
+      "referenciaExplicita": 0,
+      "elegiveisPelaRegraAtual": 20,
+      "textoAssociadoSemReferenciaExplicita": 0,
+      "exemplosAssociadosSemReferencia": []
+    },
+    {
+      "prova": "Enfermeiro · Joaçaba · 2025",
+      "total": 40,
+      "comTextoBase": 7,
+      "referenciaExplicita": 0,
+      "elegiveisPelaRegraAtual": 33,
+      "textoAssociadoSemReferenciaExplicita": 7,
+      "exemplosAssociadosSemReferencia": [
+        {
+          "numero": "1",
+          "texto": "Neste poema do texto 1, os versos que dizem “São pessoas que me sobram/ e a gramática se torna um escândalo/ quando ela que esqueceu as pala"
+        },
+        {
+          "numero": "2",
+          "texto": "No texto 1, em “Desencaminhada então eu me detenho”, o termo “Desencaminhada” desempenha a função sintática de:"
+        },
+        {
+          "numero": "3",
+          "texto": "Considere os versos do poema apresentado no texto 1 e assinale a alternativa em que a pontuação empregada segue a Norma Culta Padrão e não a"
+        },
+        {
+          "numero": "4",
+          "texto": "Leia os versos do poema apresentado no texto 1.\n“Ser a descuidada que cuida dela enquanto outros a descuidam por mim.” Assinale a alternativ"
+        },
+        {
+          "numero": "8",
+          "texto": "Sintaticamente, no verso “Me permito desmoronar”, há quantos objetos?"
+        },
+        {
+          "numero": "9",
+          "texto": "No texto 2, nos versos da canção de Tássia Reis, o eu lírico declara: “Só sorri quando quero chorar Isso não foi difícil aprender, mas Desap"
+        },
+        {
+          "numero": "10",
+          "texto": "O primeiro verso da canção, “Se avexe não”, intro-duz imediatamente uma marca de oralidade que nos reporta a um estilo de variação linguísti"
+        }
+      ]
+    }
+  ]
+}
