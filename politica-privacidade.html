@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="index,follow" />
+    <title>Política de Privacidade — ACS Digital</title>
+    <!-- Página 100% autocontida: nenhuma fonte externa, script ou rastreador. -->
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+        background: #f6f8fa; color: #1a2332; line-height: 1.65;
+        padding: 24px 16px;
+      }
+      main { max-width: 760px; margin: 0 auto; background: #fff; border: 1px solid #e1e6ec; border-radius: 12px; padding: 32px 28px; }
+      h1 { font-size: 1.55rem; color: #17324d; margin-bottom: 4px; }
+      .updated { font-size: 0.85rem; color: #5b6b7d; margin-bottom: 20px; }
+      h2 { font-size: 1.05rem; color: #17324d; margin: 22px 0 8px; }
+      p, li { font-size: 0.95rem; }
+      ul { padding-left: 20px; margin: 6px 0; }
+      li { margin: 4px 0; }
+      strong { color: #17324d; }
+      .highlight {
+        background: #eef6ee; border: 1px solid #cfe6cf; border-radius: 8px;
+        padding: 12px 14px; margin: 14px 0; font-size: 0.95rem;
+      }
+      footer { margin-top: 26px; padding-top: 14px; border-top: 1px solid #e1e6ec; font-size: 0.85rem; color: #5b6b7d; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Política de Privacidade</h1>
+      <p class="updated">Aplicativo <strong>ACS Digital</strong> — Última atualização: 23 de setembro de 2026</p>
+
+      <div class="highlight">
+        <strong>Resumo em uma frase:</strong> o ACS Digital é uma ferramenta de trabalho
+        <strong>offline</strong>. Todos os dados digitados no app — <strong>inclusive informações de
+        saúde dos moradores</strong> — ficam <strong>apenas no armazenamento local do seu
+        aparelho</strong>. O app <strong>não coleta, não envia e não compartilha nenhum dado</strong>
+        com servidores, empresas ou terceiros.
+      </div>
+
+      <h2>1. Dados tratados pelo aplicativo</h2>
+      <p>O ACS Digital <strong>não coleta dados de quem instala</strong> o app: não há cadastro,
+      login, conta, e-mail ou identificador de qualquer tipo. Os dados existentes no app são os
+      que <strong>você digita</strong> no exercício do seu trabalho — cadastros de moradores
+      (nome, cartão cidadão, CPF, CNS, endereço e informações de acompanhamento), visitas,
+      guias, agendamentos e anotações. Esses dados são gravados exclusivamente no
+      <strong>banco de dados local (IndexedDB) do aparelho</strong> e nunca são transmitidos
+      a lugar algum. Eles saem do dispositivo apenas se você exportá-los manualmente em JSON
+      ou ao desinstalar o app / apagar seus dados nas configurações do Android.</p>
+
+      <h2>2. Permissões do dispositivo</h2>
+      <p>O aplicativo solicita apenas uma permissão do Android:</p>
+      <ul>
+        <li><strong>Internet</strong> — exigida pelo componente nativo do Android que exibe a
+        interface. O app <strong>não faz requisições de rede com dados seus</strong> e funciona
+        integralmente sem conexão. Ao tocar em um link de WhatsApp (quando você mesmo o
+        escolher), a abertura acontece no aplicativo externo, sob o seu controle.</li>
+      </ul>
+      <p>O app <strong>não acessa</strong>: câmera, microfone, contatos, localização (GPS),
+      armazenamento externo, histórico de navegação, lista de aplicativos instalados,
+      notificações, sensor biométrico ou qualquer outro recurso do dispositivo.</p>
+
+      <h2>3. Funcionamento offline e armazenamento local</h2>
+      <p>Toda a interface vem embutida no próprio aplicativo. Os cadastros ficam no
+      <strong>IndexedDB do WebView do seu aparelho</strong>, protegidos pelo sandbox do Android.
+      Nada é sincronizado com nuvem. Para proteger esses dados, recomendamos usar bloqueio de
+      tela (PIN/biometria) no dispositivo. O app ainda remove automaticamente cadastros órfãos
+      após 180 dias. Você pode limpar tudo a qualquer momento em Configurações → Apps →
+      ACS Digital → Armazenamento → Limpar dados, ou simplesmente desinstalando o app.</p>
+
+      <h2>4. Uso da internet</h2>
+      <p>O ACS Digital <strong>não possui servidor</strong>: nenhuma estatística, telemetria ou
+      conteúdo é baixado. A permissão de internet existe apenas por exigência do componente
+      nativo. Links externos (como WhatsApp) são abertos por você, em outro aplicativo, no
+      momento do toque — o ACS Digital não participa da conversa nem enxerga seu conteúdo.</p>
+
+      <h2>5. Analytics, cookies e publicidade</h2>
+      <ul>
+        <li><strong>Não</strong> usamos ferramentas de analytics ou telemetria.</li>
+        <li><strong>Não</strong> usamos cookies, pixels ou identificadores de rastreamento.</li>
+        <li><strong>Não</strong> há publicidade, anúncios, Google Ads ou patrocínios.</li>
+        <li><strong>Não</strong> há compras dentro do app, assinaturas ou cobranças.</li>
+        <li><strong>Não</strong> há interação entre usuários, chat ou compartilhamento automático.</li>
+      </ul>
+
+      <h2>6. Compartilhamento e venda de dados</h2>
+      <p>Nenhum dado é compartilhado, vendido, alugado ou disponibilizado a terceiros — porque
+      nenhum dado sai do aparelho. Não há SDKs de publicidade nem integrações com serviços de
+      terceiros.</p>
+
+      <h2>7. Segurança e retenção</h2>
+      <p>Os dados permanecem somente no dispositivo, sob o sandbox do Android, até que você
+      os apague (manualmente, limpando os dados do app ou desinstalando). Não existe base de
+      dados nossa a ser violada. A responsabilidade pela proteção física do aparelho e pelo
+      backup (função Exportar do próprio app) é de quem usa.</p>
+
+      <h2>8. Crianças e adolescentes</h2>
+      <p>O ACS Digital é <strong>ferramenta de uso profissional</strong>, destinada a agentes
+      comunitários de saúde maiores de idade. Não é voltado ao público infantil. Eventuais
+      informações de menores digitadas pelo profissional no cadastro permanecem apenas no
+      aparelho do profissional, conforme descrito acima.</p>
+
+      <h2>9. Seus direitos (LGPD)</h2>
+      <p>Pela Lei Geral de Proteção de Dados (Lei 13.709/2018), você tem direito de acesso,
+      correção e exclusão dos dados. Como tudo é gravado localmente, esses direitos são
+      exercidos <strong>no próprio aparelho</strong>: edite ou apague os registros no app, ou
+      limpe os dados do aplicativo nas configurações do Android. Nenhum dado pessoal é mantido
+      por nós. Em caso de dúvidas, use o canal de contato abaixo.</p>
+
+      <h2>10. Alterações nesta política</h2>
+      <p>Esta política poderá ser atualizada. Qualquer mudança relevante será refletida nesta
+      mesma página, com a nova data de atualização no topo do documento. Continuar usando o
+      app após uma alteração significa estar de acordo com a versão vigente.</p>
+
+      <h2>11. Contato</h2>
+      <p>Em caso de dúvidas sobre esta política ou sobre o aplicativo, fale conosco pelo e-mail:
+      <strong>mmr05@hotmail.com</strong>.</p>
+
+      <footer>
+        ACS Digital — ferramenta offline do Agente Comunitário de Saúde. Este documento atende
+        aos requisitos de política de privacidade da Google Play Store.
+      </footer>
+    </main>
+  </body>
+</html>
