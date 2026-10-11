@@ -1112,7 +1112,8 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
     } finally { window.clearTimeout(timer); }
   };
   useEffect(() => { if (showImportModal && repoStatus === "idle") void fetchRepoManifest(); }, [showImportModal, repoStatus]);
-  const isYearGroup = (pasta: string) => /º ano/.test(pasta);
+  const isSingleOptionGroup = (pasta: string) => /º ano/.test(pasta) || pasta === "Técnico" || pasta.indexOf("Quiz/") === 0;
+  const singleOptionLabel = (pasta: string) => pasta.indexOf("Quiz/") === 0 && pasta.split("/").pop() ? String(pasta.split("/").pop()) : pasta;
   const importRepoPackages = async (pacotes: KuaaRepoPackage[], rotulo: string) => {
     if (repoDownloading) return;
     setRepoDownloading(rotulo);
@@ -1195,11 +1196,11 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
               const somaQuestoes = group.itens.reduce((s, p) => s + p.questoes, 0);
               const badge = groupBadge(group.itens);
               const busy = repoDownloading === group.pasta;
-              if (isYearGroup(group.pasta)) {
+              if (isSingleOptionGroup(group.pasta)) {
                 return (
                   <section key={group.pasta} className="import-modal-year">
-                    <div><strong>{group.pasta} · {somaProvas} prova(s) · {somaQuestoes} questões</strong> {badge && <span className="import-modal-badge">{badge}</span>}</div>
-                    <button disabled={busy} onClick={() => void importRepoPackages(group.itens, group.pasta)} aria-label={`Baixar ${group.pasta}`}>{busy ? "Baixando…" : "Baixar"}</button>
+                    <div><strong>{singleOptionLabel(group.pasta)} · {somaProvas} prova(s) · {somaQuestoes} questões</strong> {badge && <span className="import-modal-badge">{badge}</span>}</div>
+                    <button disabled={busy} onClick={() => void importRepoPackages(group.itens, singleOptionLabel(group.pasta))} aria-label={`Baixar ${singleOptionLabel(group.pasta)}`}>{busy ? "Baixando…" : "Baixar"}</button>
                   </section>
                 );
               }
