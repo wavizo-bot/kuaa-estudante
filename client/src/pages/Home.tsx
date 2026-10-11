@@ -1081,9 +1081,9 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
   const quickStartedAtRef = useRef(Date.now());
   const [showFaq, setShowFaq] = useState(false);
   // Acervo online (KuaaRepo no GitHub como fonte) — modal aberto pelo botão Importar.
-  // O manifest lista os pacotes; o download traz o JSON cru e reaproveita o pipeline
-  // do importPackage (dedupe por id torna a reimportação segura). Conexão só acontece
-  // quando o usuário abre este painel (ver politica-privacidade.html §4-A).
+  // O manifest lista os pacotes; o download traz o JSON cru (dedupe por id
+  // torna a reimportação segura). Anos saem em 1 arquivo/linha; demais grupos
+  // listam por pacote. Conexão só quando o usuário abre este painel (§4-A).
   const KUAA_REPO_MANIFEST_URL = "https://raw.githubusercontent.com/wavizo-bot/KuaaRepo/main/manifest.json";
   const KUAA_REPO_RAW_BASE = "https://raw.githubusercontent.com/wavizo-bot/KuaaRepo/main/";
   type KuaaRepoPackage = { caminho: string; pasta: string; arquivo: string; provas: number; questoes: number; atualizadoEm: string };
@@ -1096,7 +1096,6 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
   const [repoDownloading, setRepoDownloading] = useState<string | null>(null);
   const [repoImports, setRepoImports] = useState<Record<string, string>>(() => { try { const v = JSON.parse(window.localStorage.getItem("kuaa-repo-imports") || "{}"); return v && typeof v === "object" ? v : {}; } catch { return {}; } });
   useEffect(() => { try { window.localStorage.setItem("kuaa-repo-imports", JSON.stringify(repoImports)); } catch { /* ignora */ } }, [repoImports]);
-  const localFileRef = useRef<HTMLInputElement | null>(null);
   const fetchRepoManifest = async () => {
     setRepoStatus("loading"); setRepoError("");
     const controller = new AbortController();
@@ -1113,37 +1112,49 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
     } finally { window.clearTimeout(timer); }
   };
   useEffect(() => { if (showImportModal && repoStatus === "idle") void fetchRepoManifest(); }, [showImportModal, repoStatus]);
-  const importRepoPackage = async (pkg: KuaaRepoPackage) => {
+  const isYearGroup = (pasta: string) => /º ano/.test(pasta);
+  const importRepoPackages = async (pacotes: KuaaRepoPackage[], rotulo: string) => {
     if (repoDownloading) return;
-    setRepoDownloading(pkg.caminho);
+    setRepoDownloading(rotulo);
     try {
-      const url = KUAA_REPO_RAW_BASE + pkg.caminho.split("/").map(encodeURIComponent).join("/");
-      const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 30000);
-      let raw: Record<string, unknown>;
-      try {
-        const res = await fetch(url, { signal: controller.signal, cache: "no-store" });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        raw = JSON.parse(await res.text()) as Record<string, unknown>;
-      } finally { window.clearTimeout(timer); }
-      const entries = Array.isArray(raw.exams) ? raw.exams : [raw];
       const knownIds = new Set(exams.map((item) => item.id));
-      const candidates = entries.map((item, index) => normalizeExamPayload(item as Record<string, unknown>, `repo-${Date.now()}-${index}`));
-      const unresolved = candidates.filter((c) => (c.kind || "prova") === "prova" && isUnresolvedRole(c.role)).length;
-      const fresh = candidates.filter((c) => ((c.kind || "prova") !== "prova" || !isUnresolvedRole(c.role)) && !knownIds.has(c.id));
-      if (!fresh.length) {
-        toast(unresolved ? "Pacote sem cargo válido" : "Tudo deste pacote já está no acervo", { description: unresolved ? "O pacote não contém cargo profissional válido." : "Nenhuma prova nova para importar." });
+      let accumulated = [...exams];
+      let freshTotal = 0;
+      for (let pi = 0; pi < pacotes.length; pi++) {
+        const pkg = pacotes[pi];
+        const url = KUAA_REPO_RAW_BASE + pkg.caminho.split("/").map(encodeURIComponent).join("/");
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), 60000);
+        try {
+          const res = await fetch(url, { signal: controller.signal, cache: "no-store" });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const raw = JSON.parse(await res.text()) as Record<string, unknown>;
+          const entries = Array.isArray(raw.exams) ? raw.exams : [raw];
+          const candidates = entries.map((item, index) => normalizeExamPayload(item as Record<string, unknown>, `repo-${Date.now()}-${pi}-${index}`));
+          const fresh = candidates.filter((c) => ((c.kind || "prova") !== "prova" || !isUnresolvedRole(c.role)) && !knownIds.has(c.id));
+          fresh.forEach((c) => knownIds.add(c.id));
+          accumulated = [...accumulated, ...fresh];
+          freshTotal += fresh.length;
+        } finally { window.clearTimeout(timer); }
+      }
+      if (!freshTotal) {
+        toast("Tudo deste item já está no acervo", { description: "Nenhuma prova nova para importar." });
         return;
       }
-      const accumulated = [...exams, ...fresh];
-      fresh.forEach((c) => knownIds.add(c.id));
       onChange(accumulated);
       chooseExam(accumulated[exams.length]?.id || "");
-      setRepoImports((prev) => ({ ...prev, [pkg.caminho]: pkg.atualizadoEm }));
-      toast.success(`${fresh.length} prova(s) de "${pkg.arquivo}"`, { description: `${pkg.questoes} questões no pacote. Bom estudo!` });
+      setRepoImports((prev) => { const next = { ...prev }; pacotes.forEach((p) => { next[p.caminho] = p.atualizadoEm; }); return next; });
+      toast.success(`${freshTotal} prova(s) de "${rotulo}"`, { description: "Bom estudo!" });
     } catch {
-      toast.error("Falha ao baixar o pacote", { description: "Verifique sua internet e tente de novo." });
+      toast.error("Falha ao baixar", { description: "Verifique sua internet e tente de novo." });
     } finally { setRepoDownloading(null); }
+  };
+  const groupBadge = (itens: KuaaRepoPackage[]) => {
+    const novos = itens.filter((p) => !repoImports[p.caminho]).length;
+    if (novos > 0) return itens.length > 1 ? `${novos} NOVOS` : "NOVO";
+    const atualizados = itens.filter((p) => p.atualizadoEm > (repoImports[p.caminho] || "")).length;
+    if (atualizados > 0) return "ATUALIZADO";
+    return "";
   };
   const repoGroups = useMemo(() => {
     if (!repoManifest) return [] as { pasta: string; itens: KuaaRepoPackage[] }[];
@@ -1171,9 +1182,7 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
       <div className="faq-panel import-modal-panel" onClick={(event) => event.stopPropagation()} role="dialog" aria-label="Importar provas">
         <div className="import-modal-top">
           <button className="import-modal-close" onClick={() => setShowImportModal(false)} aria-label="Fechar">✕ FECHAR</button>
-          <button className="import-modal-local" onClick={() => localFileRef.current?.click()} aria-label="Importar arquivo local">📍 LOCAL</button>
         </div>
-        <input ref={localFileRef} type="file" multiple accept="application/json,.json" onChange={importPackage} style={{ display: "none" }} />
         <hr className="import-modal-divider" />
         {repoStatus === "loading" && <p className="import-modal-note">Buscando o acervo oficial…</p>}
         {repoStatus === "error" && <div className="import-modal-note"><p>{repoError}</p><Button variant="outline" onClick={() => void fetchRepoManifest()}>Tentar de novo</Button></div>}
@@ -1181,28 +1190,41 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
           <p className="import-modal-note">{repoManifest.totais.arquivos} pacotes · {repoManifest.totais.provas} provas · {repoManifest.totais.questoes} questões{repoNewsCount > 0 ? ` · ${repoNewsCount} novidade(s)` : " · tudo em dia"}</p>
           <input className="import-modal-search" type="search" placeholder="Buscar no acervo…" value={repoSearch} onChange={(e) => setRepoSearch(e.target.value)} aria-label="Buscar no acervo" />
           <div className="import-modal-groups">
-            {repoGroups.map((group) => (
+            {repoGroups.map((group) => {
+              const somaProvas = group.itens.reduce((s, p) => s + p.provas, 0);
+              const somaQuestoes = group.itens.reduce((s, p) => s + p.questoes, 0);
+              const badge = groupBadge(group.itens);
+              const busy = repoDownloading === group.pasta;
+              if (isYearGroup(group.pasta)) {
+                return (
+                  <section key={group.pasta} className="import-modal-year">
+                    <div><strong>{group.pasta} · {somaProvas} prova(s) · {somaQuestoes} questões</strong> {badge && <span className="import-modal-badge">{badge}</span>}</div>
+                    <button disabled={busy} onClick={() => void importRepoPackages(group.itens, group.pasta)} aria-label={`Baixar ${group.pasta}`}>{busy ? "Baixando…" : "Baixar"}</button>
+                  </section>
+                );
+              }
+              return (
               <section key={group.pasta}>
                 <h3>{group.pasta} <small>({group.itens.length})</small></h3>
                 <ul>
                   {group.itens.map((pkg) => {
                     const seen = repoImports[pkg.caminho];
-                    const badge = !seen ? "NOVO" : pkg.atualizadoEm > seen ? "ATUALIZADO" : "";
-                    const busy = repoDownloading === pkg.caminho;
+                    const pbadge = !seen ? "NOVO" : pkg.atualizadoEm > seen ? "ATUALIZADO" : "";
+                    const pbusy = repoDownloading === pkg.caminho;
                     return (
                       <li key={pkg.caminho}>
-                        <div><strong>• {friendlyRepoName(pkg.arquivo)}</strong> <small>{pkg.provas} prova(s) · {pkg.questoes} questões</small> {badge && <span className="import-modal-badge">{badge}</span>}</div>
-                        <button disabled={busy} onClick={() => void importRepoPackage(pkg)} aria-label={`Baixar ${pkg.arquivo}`}>{busy ? "Baixando…" : "Baixar"}</button>
+                        <div><strong>• {friendlyRepoName(pkg.arquivo)}</strong> <small>{pkg.provas} prova(s) · {pkg.questoes} questões</small> {pbadge && <span className="import-modal-badge">{pbadge}</span>}</div>
+                        <button disabled={pbusy} onClick={() => void importRepoPackages([pkg], friendlyRepoName(pkg.arquivo))} aria-label={`Baixar ${pkg.arquivo}`}>{pbusy ? "Baixando…" : "Baixar"}</button>
                       </li>
                     );
                   })}
                 </ul>
               </section>
-            ))}
+              );
+            })}
             {!repoGroups.length && <p className="import-modal-note">Nada encontrado para “{repoSearch}”.</p>}
           </div>
         </>}
-        <p className="import-modal-foot">📍 Local = arquivos JSON já salvos no aparelho. Repositório = acervo oficial (GitHub) — só conecta quando você abre este painel.</p>
       </div>
     </div>
   );
@@ -1696,42 +1718,6 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
   const pularRitmo = () => { if (!ritmoQuestao || ritmoRespondido || ritmoRevelando || ritmoTempoEsgotado) return; const tempoSeg = Math.max(0, (Date.now() - ritmoQuestaoInicioRef.current) / 1000); if (vibrationEnabled) vibrate(erroVibrationMs); playSound("erro"); const resultado = calcularPontuacaoRitmoPressao(ritmoQuestao.difficulty || "media", ritmoModo, false, true, ritmoSequencia, ritmoPunicao); setRitmoPontos((p) => p + resultado.pontuacao); setRitmoSequencia(resultado.sequenciaAtualizada); if (ritmoModo === "pressao") setRitmoPunicao(resultado.sequenciaPunicaoAtualizada); registrarRitmoStat(ritmoQuestao, false, tempoSeg); selectRitmo(ritmoQuestao.sourceExam.questionKey); };
   const proximaRitmo = () => { if (!ritmoQuestao) return; dismissBanner(); selectRitmo(ritmoQuestao.sourceExam.questionKey); };
   const finalizarRitmo = () => { if (ritmoTimerRef.current) window.clearInterval(ritmoTimerRef.current); setRitmoTempoEsgotado(true); setRitmoRecordes((atuais) => { const melhor = Math.max(atuais[ritmoModo] || 0, ritmoPontos); return { ...atuais, [ritmoModo]: melhor }; }); setRitmoStats((atual) => ({ ...atual, melhor: Math.max(atual.melhor, ritmoRecordes[ritmoModo] || 0, ritmoPontos) })); setScreen("ritmo-resumo"); };
-  async function importPackage(event: ChangeEvent<HTMLInputElement>) {
-    // Importação múltipla: o input agora aceita vários JSONs de uma vez;
-    // percorre todos, deduplica entre eles e mostra um resumo no toast.
-    const files = Array.from(event.target.files || []);
-    if (!files.length) return;
-    const MAX_SILENT_IMPORT_BYTES = 400 * 1024;
-    const knownIds = new Set(exams.map((item) => item.id));
-    let accumulated = [...exams];
-    let imported = 0; let duplicates = 0; let unresolvedTotal = 0; let failed = 0;
-    for (const file of files) {
-      if (file.size > MAX_SILENT_IMPORT_BYTES) {
-        const proceed = window.confirm(`${file.name} é grande (>400KB). A importação pode ser lenta. Deseja continuar?`);
-        if (!proceed) continue;
-      }
-      try {
-        const raw = JSON.parse(await file.text()) as Record<string, unknown>;
-        const entries = Array.isArray(raw.exams) ? raw.exams : [raw];
-        const candidates = entries.map((item, index) => normalizeExamPayload(item as Record<string, unknown>, `prova-${Date.now()}-${files.indexOf(file)}-${index}`));
-        const unresolved = candidates.filter((candidate) => (candidate.kind || "prova") === "prova" && isUnresolvedRole(candidate.role)).length;
-        const fresh = candidates.filter((candidate) => ((candidate.kind || "prova") !== "prova" || !isUnresolvedRole(candidate.role)) && !knownIds.has(candidate.id));
-        fresh.forEach((candidate) => knownIds.add(candidate.id));
-        accumulated = [...accumulated, ...fresh];
-        imported += fresh.length;
-        duplicates += candidates.length - fresh.length - unresolved;
-        unresolvedTotal += unresolved;
-      } catch { failed += 1; }
-    }
-    event.target.value = "";
-    if (imported > 0) {
-      onChange(accumulated);
-      chooseExam(accumulated[exams.length]?.id || "");
-      toast.success(`${imported} prova(s) importada(s)`, { description: `${files.length} arquivo(s) analisado(s). ${duplicates} duplicidade(s) ignorada(s).${unresolvedTotal ? ` ${unresolvedTotal} prova(s) sem cargo válido bloqueada(s).` : ""}${failed ? ` ${failed} arquivo(s) não reconhecido(s).` : ""}` });
-    } else {
-      toast.error("Nenhuma prova importada", { description: unresolvedTotal ? "Os pacotes não contêm cargo profissional válido. Corrija o campo role na intermediadora." : failed ? "Nenhum arquivo foi reconhecido. Use arquivos exportados pelo intermediador." : "Os pacotes já estão no seu acervo." });
-    }
-  }
   const deleteExam = (id: string) => { const exam = exams.find((item) => item.id === id); if (!exam || !window.confirm(`Excluir ${exam.role} · ${exam.city}?`)) return; const remaining = exams.filter((item) => item.id !== id); onChange(remaining); chooseExam(remaining[0]?.id || ""); toast.success("Prova excluída do dispositivo"); };
   const deleteAllExams = () => {
     if (!exams.length) return;

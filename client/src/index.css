@@ -339,6 +339,10 @@
   .import-modal-groups li button { flex-shrink:0; border:1px solid var(--student-line,#c7d2d0); background:var(--student-surface,#fffdf7); border-radius:6px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; color:var(--student-ink,#17324d); }
   .import-modal-groups li button:hover:not(:disabled) { background:var(--student-soft,#eef4df); }
   .import-modal-groups li button:disabled { opacity:.6; cursor:wait; }
+  .import-modal-year { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-top:1px solid var(--student-line,#e3eae8); font-size:13px; color:var(--student-ink,#17324d); }
+  .import-modal-year button { flex-shrink:0; border:1px solid var(--student-line,#c7d2d0); background:var(--student-surface,#fffdf7); border-radius:6px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; color:var(--student-ink,#17324d); }
+  .import-modal-year button:hover:not(:disabled) { background:var(--student-soft,#eef4df); }
+  .import-modal-year button:disabled { opacity:.6; cursor:wait; }
   .import-modal-badge { display:inline-block; font-size:10px; font-weight:800; letter-spacing:.04em; background:#b9e34d; color:#17324d; border-radius:4px; padding:1px 6px; margin-left:6px; vertical-align:1px; }
   .import-modal-foot { margin-top:14px; padding-top:10px; border-top:1px solid var(--student-line,#d2ddda); color:#5a7076; font-size:11px; line-height:1.55; }
   .form-stats-sheet { max-width:640px; text-align:left; }
