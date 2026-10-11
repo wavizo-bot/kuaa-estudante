@@ -1172,6 +1172,7 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
   type NivelLinha = { key: string; rotulo: React.ReactNode; detalhe: string; badge: string; pacotes: KuaaRepoPackage[]; downloadLabel: string };
   type NivelGrupo = { titulo: string; linhas: NivelLinha[] };
   const rotuloAno = (pasta: string) => pasta.replace(" EM", "");
+  const friendlyRepoName = (arquivo: string) => arquivo.replace(/_/g, " ");
   const rotuloAmigavel = (pasta: string, arquivo: string) => {
     if (arquivo === "tecnico_enfermagem") return "Técnico em enfermagem";
     if (pasta.indexOf("Quiz/") === 0) return arquivo;
@@ -1225,7 +1226,6 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
     if (!repoManifest) return 0;
     return repoManifest.pacotes.filter((p) => { const seen = repoImports[p.caminho]; return !seen || p.atualizadoEm > seen; }).length;
   }, [repoManifest, repoImports]);
-  const friendlyRepoName = (arquivo: string) => arquivo.replace(/_/g, " ");
   const importModal = !showImportModal ? null : (
     <div className="faq-overlay" onClick={() => setShowImportModal(false)}>
       <div className="faq-panel import-modal-panel" onClick={(event) => event.stopPropagation()} role="dialog" aria-label="Importar provas">
