@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="index,follow" />
+    <title>Política de Privacidade — kuaa Estudante</title>
+    <!-- Página 100% autocontida: nenhuma fonte externa, script ou rastreador. -->
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+        background: #f6f8fa; color: #1a2332; line-height: 1.65;
+        padding: 24px 16px;
+      }
+      main { max-width: 760px; margin: 0 auto; background: #fff; border: 1px solid #e1e6ec; border-radius: 12px; padding: 32px 28px; }
+      h1 { font-size: 1.55rem; color: #17324d; margin-bottom: 4px; }
+      .updated { font-size: 0.85rem; color: #5b6b7d; margin-bottom: 20px; }
+      h2 { font-size: 1.05rem; color: #17324d; margin: 22px 0 8px; }
+      p, li { font-size: 0.95rem; }
+      ul { padding-left: 20px; margin: 6px 0; }
+      li { margin: 4px 0; }
+      strong { color: #17324d; }
+      .highlight {
+        background: #eef6ee; border: 1px solid #cfe6cf; border-radius: 8px;
+        padding: 12px 14px; margin: 14px 0; font-size: 0.95rem;
+      }
+      footer { margin-top: 26px; padding-top: 14px; border-top: 1px solid #e1e6ec; font-size: 0.85rem; color: #5b6b7d; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Política de Privacidade</h1>
+      <p class="updated">Aplicativo <strong>kuaa Estudante</strong> — Última atualização: 11 de outubro de 2026</p>
+
+      <div class="highlight">
+        <strong>Resumo em uma frase:</strong> o kuaa Estudante é um aplicativo educacional
+        <strong>offline</strong>. Ele <strong>não coleta, não armazena em servidores, não envia e não
+        compartilha nenhum dado pessoal</strong> de quem usa. A única exceção é quando você escolhe
+        baixar provas do repositório oficial (ver seção 4): nesse caso o app faz uma conexão de
+        leitura com o GitHub para trazer os arquivos — nenhum dado pessoal é enviado por nós.
+      </div>
+
+      <h2>1. Dados que o aplicativo coleta</h2>
+      <p>Nenhum. Não há cadastro, login, formulários, campo de texto enviado a servidores, contas ou
+      perfis. O app não cria, não obtém e não transmite qualquer dado pessoal (nome, e-mail, telefone,
+      CPF, localização, lista de contatos, fotos, áudio etc.).</p>
+
+      <h2>2. Permissões do dispositivo</h2>
+      <p>No Android, o aplicativo solicita apenas duas permissões, e nenhuma delas lê dados pessoais:</p>
+      <ul>
+        <li><strong>Internet</strong> — usada para carregar fontes tipográficas (ver seção 4), para baixar pacotes de provas do repositório oficial quando você escolhe essa opção na tela de importação (ver seção 4-A) e, se houver atualização do próprio app pela loja.</li>
+        <li><strong>Vibrar</strong> — feedback tátil opcional de interface.</li>
+      </ul>
+      <p>No Windows (versão da Microsoft Store), o aplicativo declara apenas a capacidade de <strong>rede (internetClient)</strong>, para os mesmos fins das fontes tipográficas e do acervo online (ver seção 4-A); o retorno tátil é recurso de interface e não lê nenhum dado.</p>
+      <p>O app <strong>não acessa</strong>: câmera, microfone, contato, localização (GPS), armazenamento
+      externo, histórico de navegação, lista de aplicativos instalados, notificações, sensor biométrico
+      ou qualquer outro recurso do dispositivo.</p>
+
+      <h2>3. Funcionamento offline</h2>
+      <p>Todo o conteúdo educacional (textos, imagens, vídeos e exercícios) vem embutido no próprio
+      aplicativo. Funciona sem conexão. Um mecanismo interno (service worker) guarda esse conteúdo
+      apenas no <strong>armazenamento local do seu aparelho</strong> para abrir mais rápido e operar
+      offline — esses arquivos ficam no seu dispositivo, nunca são enviados para lugar algum e são
+      removidos simplesmente desinstalando o app (no Android: Configurações → Apps → kuaa Estudante →
+      Armazenamento → Limpar dados; no Windows: Configurações → Aplicativos → kuaa Estudante →
+      Opções avançadas → Redefinir).</p>
+
+      <h2>4. Uso da internet</h2>
+      <p>A única conexão feita pelo app é a <strong>busca de fontes tipográficas</strong> (Google
+      Fonts), que acontece apenas quando o dispositivo está online e serve apenas para exibir o texto
+      com a aparência correta. Trata-se de requisição técnica ao servidor do Google; o endereço IP é
+      tratado pelo Google conforme a
+      <a href="https://policies.google.com/privacy?hl=pt-BR" rel="noopener">Política de Privacidade do Google</a>.
+      Nenhum dado pessoal é transmitido a nós, e o app <strong>pode ser usado integralmente sem
+      internet</strong>.</p>
+
+      <h2>4-A. Acervo online (download de provas do repositório oficial)</h2>
+      <p>Na tela inicial, o botão <strong>Importar</strong> abre um painel com duas opções:
+      <strong>Local</strong> (arquivos JSON já salvos no seu aparelho — nada sai do dispositivo) e
+      <strong>Repositório</strong> (pacotes de provas publicados por nós no repositório oficial
+      <strong>wavizo-bot/KuaaRepo</strong> no GitHub).</p>
+      <ul>
+        <li>A conexão com o GitHub acontece <strong>somente se e quando você escolher a opção
+        Repositório</strong> (ao abrir o painel e ao tocar em Baixar). Se você usar apenas a opção
+        Local, nenhuma conexão com o GitHub é feita.</li>
+        <li>O app baixa apenas dois tipos de arquivo público: o índice do acervo
+        (<strong>manifest.json</strong>, com nomes de pacotes e contagens de provas/questões) e os
+        pacotes JSON que você escolher. Os arquivos baixados são salvos <strong>apenas no seu
+        aparelho</strong> (mesmo armazenamento local da seção 3).</li>
+        <li>O app <strong>não envia nenhum dado pessoal</strong> nessas requisições: não há login,
+        conta, identificador ou telemetria — é uma leitura anônima de arquivos públicos. Ainda assim,
+        como em qualquer acesso à internet, o servidor do GitHub pode registrar dados técnicos da
+        conexão (como endereço IP), tratados conforme a
+        <a href="https://docs.github.com/pt/site-policy/privacy-policies/github-privacy-statement" rel="noopener">Declaração de Privacidade do GitHub</a>.</li>
+        <li>A verificação de novidades usa as datas públicas do índice
+        (<strong>geradoEm/atualizadoEm</strong>) comparadas com o registro local do que você já
+        baixou. Se o aparelho estiver offline, o painel mostra erro de conexão e nada muda no seu
+        acervo.</li>
+      </ul>
+
+      <h2>5. Analytics, cookies e publicidade</h2>
+      <ul>
+        <li><strong>Não</strong> usamos ferramentas de analytics ou telemetria.</li>
+        <li><strong>Não</strong> usamos cookies, pixels ou identificadores de rastreamento.</li>
+        <li><strong>Não</strong> há publicidade, anúncios, Google Ads ou patrocínios.</li>
+        <li><strong>Não</strong> há compras dentro do app, assinaturas ou cobranças.</li>
+        <li><strong>Não</strong> há redes sociais, compartilhamento, chat, comentários ou interação entre usuários.</li>
+      </ul>
+
+      <h2>6. Compartilhamento e venda de dados</h2>
+      <p>Nenhum dado é compartilhado, vendido, alugado ou disponibilizado a terceiros — porque nenhum
+      dado é coletado. Não há anúncios de terceiros e não há SDKs de publicidade.</p>
+
+      <h2>7. Segurança e retenção</h2>
+      <p>Como não coletamos nem armazenamos dados em servidores, não há base de dados a proteger e
+      nenhum dado é retido. Não existe risco de vazamento de dados nossos, pois esses dados não
+      existem.</p>
+
+      <h2>8. Crianças e adolescentes</h2>
+      <p>O kuaa Estudante é material educacional e não coleta dados de nenhuma pessoa, incluindo
+      crianças. Não há como uma criança fornecer informações ao app, pois não existe campo de coleta.
+      O aplicativo não exibe anúncios nem direciona conteúdo comercial.</p>
+
+      <h2>9. Seus direitos (LGPD)</h2>
+      <p>Pela Lei Geral de Proteção de Dados (Lei 13.709/2018), você tem direito de acesso, correção,
+      exclusão e demais direitos sobre seus dados. Como o app não trata dados pessoais, não há
+      informações nossas sobre você a consultar ou excluir. Caso tenha qualquer dúvida, use o canal de
+      contato abaixo.</p>
+
+      <h2>10. Alterações nesta política</h2>
+      <p>Esta política poderá ser atualizada. Qualquer mudança relevante será refletida nesta mesma
+      página, com a nova data de atualização no topo do documento. Continuar usando o app após uma
+      alteração significa estar de acordo com a versão vigente.</p>
+
+      <h2>11. Contato</h2>
+      <p>Em caso de dúvidas sobre esta política ou sobre o aplicativo, fale conosco pelo e-mail:
+      <strong>mmr05@hotmail.com</strong> ou pelo telefone <strong>11978831938</strong>.</p>
+
+      <footer>
+        kuaa Estudante — aplicativo educacional offline. Este documento atende aos requisitos de
+        política de privacidade da Google Play Store e da Microsoft Store (Partner Center).
+      </footer>
+    </main>
+  </body>
+</html>

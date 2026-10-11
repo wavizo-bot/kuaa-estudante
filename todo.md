@@ -1,0 +1,131 @@
+# Próxima evolução da prévia
+
+- [x] Criar a etapa de revisão manual para atribuir ou corrigir o gabarito de cada questão.
+- [x] Permitir associar uma imagem local a uma questão e preservar essa associação no armazenamento local da prévia.
+- [x] Permitir atribuir, criar e remover assuntos em cada questão durante a revisão.
+- [x] Corrigir o layout do simulado em tela horizontal de computador, preservando largura útil de leitura.
+- [x] Criar a escolha de assuntos antes da questão rápida, com persistência até o retorno ao menu inicial.
+- [x] Ocultar a escolha de assuntos quando nenhuma questão importada possuir assunto.
+- [x] Adotar um prompt único para prova e gabarito, com retorno estruturado incluindo metadados, questões, respostas, imagens e assuntos sugeridos.
+- [x] Organizar os modos sem internet, prompt assistido e importação manual do JSON na prévia.
+- [x] Testar responsividade em computador e telefone vertical.
+- [x] Implementar a importação e a exportação reais de pacote JSON, incluindo imagens incorporadas, para compartilhar provas entre dispositivos.
+- [x] Corrigir a largura e quebra de texto do modo de questões rápidas em computador.
+- [x] Criar um símbolo de alto contraste, aplicá-lo como favicon e atualizar o cabeçalho.
+- [x] Permitir selecionar qualquer prova do acervo para revisão humana e retornar ao acervo após concluir.
+- [x] Permitir excluir provas no modo estudante.
+- [x] Impedir duplicidades por identificador estável de prova durante a importação.
+- [x] Selecionar provas no intermediador e exportar pacote de estudante legível pelas versões de computador e Android.
+- [x] Permitir iniciar rapidamente a versão estudante com uma prova recém-revisada antes da exportação.
+- [ ] Opcional: migrar o pacote JSON para ZIP quando o tamanho de coleções com muitas imagens justificar a compactação.
+- [x] Restaurar o botão de copiar o prompt completo para análise conjunta da prova e do gabarito, com todos os campos de extração e revisão.
+- [x] Unificar revisão, teste, pesquisa, seleção e exportação em uma lista única de acervo administrativo.
+- [x] Adicionar exclusão individual e em lote, com confirmação, ao acervo administrativo.
+- [x] Permitir filtrar e pesquisar provas por cargo, ano, órgão, cidade e banca.
+- [x] Restaurar a importação de retorno JSON da IA por arquivo e manter a cópia do prompt como alternativa.
+- [ ] Simplificar o acervo do estudante, removendo a prova “selecionada” e exigindo confirmação antes da exclusão.
+- [x] Persistir melhor nota e duração por prova, média das últimas cinco tentativas e desempenho de questões rápidas.
+- [ ] Criar estatísticas por tentativa, assunto e tempo médio de resposta, com tratamento de questões em branco como erro.
+- [ ] Exibir estado respondida/em branco no navegador da prova, temporizador contínuo e finalização fixa.
+- [x] Substituir a regra de pausa por fechamento automático da prova após cinco minutos sem ação do aluno.
+- [x] Criar três temas de estudante com três paletas contrastantes e visualmente distintas para cada tema.
+- [x] Reduzir os seletores de tema e paleta a controles compactos, com preferências persistentes no estudante.
+- [ ] Criar o estado explícito de prova fechada, com botão “Abrir prova” e navegação visível antes do início.
+- [ ] Iniciar o tempo geral apenas na primeira abertura e mantê-lo correndo até a finalização, inclusive com a prova fechada.
+- [ ] Contar tempo por assunto somente enquanto a prova estiver aberta e a questão atual permanecer ativa por mais de cinco segundos.
+- [ ] Finalizar a prova ao voltar ao menu, encerrar o programa ou executar ação equivalente, marcando respostas ausentes como erro.
+- [ ] Reabrir a prova fechada na última questão visitada e retomar a medição individual daquela questão.
+- [ ] Ignorar questões nunca abertas e permanências de até cinco segundos nas médias de tempo por assunto.
+- [x] Trocar a pontuação principal de questão rápida pela média das últimas 50 respostas e manter médias por assunto das últimas 200 respostas.
+- [x] Exibir melhor nota e duração por prova concluída, além da média das últimas cinco tentativas apenas quando houver cinco resultados.
+- [x] Exibir média de acerto das últimas 50 questões rápidas respondidas, média das últimas 10 provas e os três assuntos mais demorados nessas provas.
+- [x] Manter letras das alternativas em ordem e embaralhar somente os textos antes da reapresentação de uma questão rápida.
+- [x] Mostrar feedback de acerto ou erro diretamente na questão rápida, sem um painel adicional de explicação.
+- [x] Trocar o ícone de próxima questão por uma seta intuitiva de avanço.
+- [x] Criar um campo visível para colar o JSON retornado pela IA e um botão de leitura da área de transferência, mantendo a importação por arquivo.
+- [x] Manter as alternativas de questão rápida estáveis até a próxima pergunta e exibir retorno imediato de acerto, erro e gabarito correto.
+- [x] Aplicar prioridades alta para não respondidas, média para erradas e baixa para acertadas na seleção de questões rápidas.
+- [x] Acrescentar estatísticas de estudante na biblioteca e na versão completa de testes.
+- [x] Diferenciar os três temas também pela tipografia, mantendo contraste e legibilidade.
+- [x] Exibir crédito institucional fixo e centralizado em todas as telas de estudante.
+- [x] Criar os quatro pacotes de teste: computador completo, computador estudante, telefone estudante e tablet estudante.
+- [x] Isolar a interface estudante para os pacotes sem área administrativa.
+- [x] Adaptar o enquadramento visual de teste para telefone e tablet sem alterar os dados locais.
+- [x] Excluir do modo de questões rápidas os itens com texto-base associado ou dependência explícita de texto-base.
+- [x] Priorizar questões erradas no modo rápido, sem repetição meramente aleatória.
+- [x] Adicionar opções de paleta com contraste adequado à versão de estudante e preferência persistente por estudante.
+- [x] Documentar as opções de entrega para computador, telefone e tablet, incluindo instalação via arquivo compartilhado e importação de pacotes.
+- [x] Representar todas as questões de uma prova importada, preservando o número original do caderno.
+- [x] Permitir revisar e associar textos-base compartilhados por várias questões.
+- [x] Permitir marcar ou confirmar manualmente referências visuais mesmo quando o enunciado não menciona imagem.
+- [x] Exibir o número original da prova na fila de revisão e nas telas de estudo.
+- [x] Embaralhar alternativas apenas ao iniciar nova tentativa ou ao repetir uma questão rápida, mantendo a ordem estável durante a tentativa atual.
+- [x] Exibir na questão rápida a origem completa: prova, cargo, órgão, cidade, ano, banca e número original.
+- [x] Garantir que uma prova nunca aberta não gere tentativa nem qualquer registro estatístico.
+- [x] Regenerar os quatro arquivos ZIP de teste após a identificação de origem e a regra estatística.
+- [x] Analisar o pacote recebido e corrigir exclusões indevidas no filtro de Questões rápidas.
+- [x] Criar prompt para 5 questões de Matemática e 5 de Português alinhadas ao ensino médio regular e à BNCC.
+- [x] Criar prompt de 10 questões para um assunto identificado no acervo administrativo.
+- [x] Acumular importações sintéticas em provas de até 100 questões com banca, órgão e ano padronizados.
+- [x] Importar pacotes de provas na área administrativa, ignorando duplicidades e preservando os dados revisados.
+- [x] Configurar versão PWA estudante com manifesto, ícones e cache offline.
+- [x] Empacotar a versão estudante em APK Android de teste para telefone e tablet.
+- [x] Validar abertura, funcionamento offline e importação de pacote JSON nas versões móveis.
+- [x] Incorporar o pacote de provas fornecido no acervo inicial do APK estudante.
+- [x] Gerar e validar novo APK de teste pré-carregado para distribuição em telefones.
+- [x] Levar a rolagem ao topo ao iniciar prova, trocar tela ou avançar para outra questão.
+- [x] Fixar o início da revisão rápida em tela móvel e duplicar a ação de começar no computador.
+- [x] Ordenar e agrupar assuntos por prioridade, volume mínimo e regras de Legislação e Conhecimentos Específicos.
+- [x] Adicionar na intermediadora uma ação assistida para aplicar a taxonomia de assuntos ao acervo.
+- [x] Paginar o acervo administrativo em blocos de 10 provas, respeitando a pesquisa atual.
+- [x] Paginar o acervo do estudante em blocos de 5 provas, com controles acima e abaixo da lista.
+- [x] Corrigir os botões de prompt sintético para cópia direta após informar o nome da IA.
+- [x] Gerar e importar bancos sintéticos separados por Matemática, Língua Portuguesa e assunto selecionado, em lotes de até 50 questões.
+- [x] Restaurar a inclusão, visualização e persistência de imagens durante a revisão humana.
+- [x] Manter lotes sintéticos parciais exportáveis na intermediadora, com nome de disciplina e número de lote.
+- [x] Exibir ao estudante apenas lotes sintéticos completos de 50 questões, preservando todas para Questões rápidas.
+- [x] Corrigir a escolha de cargo para rejeitar códigos de caderno e pedir inferência à IA quando necessário.
+- [x] Adicionar exclusão total do acervo estudante com confirmação reforçada e limpeza do histórico local.
+- [x] Tornar os temas Paisagem e Noite visualmente mais distintos do tema Caderno, preservando contraste.
+- [x] Compilar o APK atualizado para testes em dispositivos móveis.
+- [x] Reforçar o prompt e a validação para nunca aceitar cargo numérico, código ou tipo de caderno.
+- [x] Aplicar o logo fornecido em cabeçalhos, favicon, manifesto e ícone do APK.
+- [x] Corrigir a visibilidade e o tamanho do logo no aplicativo móvel.
+- [x] Reorganizar o cabeçalho estudante em telefone e tablet, removendo identificação redundante e compactando o contador rápido.
+- [x] Renomear navegador, interface e pacote Android para Foco & Posse / foco-e-posse.
+- [x] Ampliar a diferença tipográfica e material entre os três temas de estudo.
+- [x] Interceptar o botão Android Voltar para retornar dentro do aplicativo antes de fechá-lo.
+- [x] Gerar APK e pacotes HTML atualizados, acompanhados de uma análise de fluxo de uso.
+- [x] Registrar em cada tentativa concluída o resultado por questão e as métricas consolidadas por assunto.
+- [x] Exibir um resumo ao finalizar a prova, com nota atual, comparação histórica, questões certas, erradas e em branco, e tempos por tema.
+- [x] Permitir consultar novamente o último resumo de cada prova concluída a partir da biblioteca estudante.
+- [x] Remover textos explicativos dispensáveis das telas de biblioteca e Questão rápida.
+- [x] Preservar a identificação completa da origem da Questão rápida, sem truncamento em telas estreitas.
+- [x] Sugerir uma prova inicial identificada, priorizando provas não concluídas e depois os piores desempenhos.
+- [x] Reorganizar o cartão de prova móvel em duas faixas: metadados e nota acima; ações em largura completa abaixo.
+- [x] Remover o estado de gabarito dos cartões do estudante e delimitar visualmente as ações Importar pacote e Excluir todo o acervo.
+- [x] Substituir o ícone de nuvem por um símbolo de entrada de pacote no estudante.
+- [x] Corrigir o contraste dos percentuais nas estatísticas dos temas Atlas e Vigília.
+- [x] Ajustar o botão Importar para ícone e texto em linha, borda arredondada e rótulo curto em telas móveis.
+- [x] Posicionar cada nova questão no início do enunciado, preservando acesso por rolagem aos controles acima.
+- [x] Simplificar a ação de prova sugerida sem alterar o critério adaptativo de escolha.
+- [x] Solicitar à IA seu nome comercial dentro dos prompts sintéticos e remover a dependência de preenchimento manual.
+- [x] Permitir assunto manual para o prompt de dez questões, além dos assuntos já catalogados.
+- [x] Igualar a aparência do botão Importar estudante à ação delimitada, usando cores variáveis do tema e paleta.
+- [x] Renomear as ações estudante para Importar e Excluir provas, preservando a cor vermelha exclusiva da exclusão.
+- [x] Alinhar o assunto manual e o botão de dez questões na mesma linha do gerador administrativo.
+- [x] Padronizar a ação administrativa de importação com ícone de arquivo, borda e rótulo curto Importar.
+- [x] Exibir bloqueio de ativação somente na versão estudante a partir de 10 de janeiro de 2027.
+- [x] Gerar um código local de cinco caracteres e validar uma senha de cinco caracteres no estudante.
+- [x] Disponibilizar na área administrativa a geração da senha correspondente ao código do estudante.
+- [x] Corrigir raio, tipografia e estados visuais do botão Importar para que acompanhe os demais botões do tema.
+- [x] Compilar APK atualizado para teste do bloqueio de ativação.
+- [x] Associar cada senha de ativação a uma duração escolhida em meses.
+- [x] Salvar a data de vencimento e voltar a bloquear o estudante após ela.
+- [x] Preservar acesso livre antes de 10/01/2027 e exigir ativação em instalações iniciadas após a data.
+- [x] Permitir que a administração escolha a validade em meses antes de copiar a senha.
+- [x] Validar renovação, expiração e primeira instalação pós-data no APK.
+- [x] Avaliar uma fonte pública de horário com resposta acessível diretamente pelo aplicativo.
+- [x] Consultar horário online quando disponível e manter o relógio local como contingência offline.
+- [x] Validar a ativação com resposta online válida, indisponível e divergente.
+- [x] Gerar APK Android e pacote HTML Windows atualizados com a conferência de horário.

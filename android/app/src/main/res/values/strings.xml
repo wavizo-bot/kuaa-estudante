@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">kuaa Estudante</string>
+    <string name="title_activity_main">kuaa Estudante</string>
+    <string name="package_name">app.kuaa.estudante</string>
+    <string name="custom_url_scheme">app.kuaa.estudante</string>
+</resources>
