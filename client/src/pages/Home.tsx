@@ -2252,6 +2252,101 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
   );
 }
 
+// ---- Aceite de termos (modal bloqueante, 1a execução / nova versão) ----
+const TERMS_VERSION = "1.0";
+const APP_VERSION_FALLBACK = "1.3.11";
+const TERMS_ACCEPT_KEY = "kuaa-terms-accept-v1";
+type TermsAccept = { terms: string; app: string; at: string };
+function readTermsAccept(): TermsAccept | null {
+  try {
+    const raw = window.localStorage.getItem(TERMS_ACCEPT_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as TermsAccept;
+    return v && typeof v.terms === "string" ? v : null;
+  } catch { return null; }
+}
+async function currentAppVersion(): Promise<string> {
+  try {
+    const getInfo = (window as Window & { Capacitor?: { Plugins?: { App?: { getInfo?: () => Promise<{ version?: string; build?: string }> } } } }).Capacitor?.Plugins?.App?.getInfo;
+    if (getInfo) {
+      const info = await getInfo();
+      const v = [info.version, info.build].filter(Boolean).join("+");
+      if (v) return v;
+    }
+  } catch { /* cai no fallback */ }
+  return APP_VERSION_FALLBACK;
+}
+type TermsTab = "privacidade" | "termos" | "aviso";
+function TermsGate({ appVersion, onAccepted }: { appVersion: string; onAccepted: () => void }) {
+  const [tab, setTab] = useState<TermsTab>("privacidade");
+  const [exited, setExited] = useState(false);
+  const accept = () => {
+    try { window.localStorage.setItem(TERMS_ACCEPT_KEY, JSON.stringify({ terms: TERMS_VERSION, app: appVersion, at: new Date().toISOString() } satisfies TermsAccept)); } catch { /* segue sem persistir */ }
+    onAccepted();
+  };
+  const quit = () => {
+    try {
+      const exitApp = (window as Window & { Capacitor?: { Plugins?: { App?: { exitApp?: () => void } } } }).Capacitor?.Plugins?.App?.exitApp;
+      if (exitApp) { exitApp(); return; }
+    } catch { /* tenta fechar a janela */ }
+    try { window.close(); } catch { /* sem permissão: tela escura abaixo */ }
+    setExited(true);
+  };
+  if (exited) return <div className="terms-blackout" aria-hidden="true" />;
+  return (
+    <div className="terms-overlay" role="dialog" aria-modal="true" aria-label="Termos e Condições de Uso">
+      <div className="terms-panel">
+        <h1>Termos e Condições de Uso</h1>
+        <p className="terms-version">versão dos termos v{TERMS_VERSION}</p>
+        <div className="terms-tabs" role="tablist">
+          <button role="tab" aria-selected={tab === "privacidade"} className={tab === "privacidade" ? "is-active" : ""} onClick={() => setTab("privacidade")}>Privacidade</button>
+          <button role="tab" aria-selected={tab === "termos"} className={tab === "termos" ? "is-active" : ""} onClick={() => setTab("termos")}>Termos de Uso</button>
+          <button role="tab" aria-selected={tab === "aviso"} className={tab === "aviso" ? "is-active" : ""} onClick={() => setTab("aviso")}>Aviso Legal</button>
+        </div>
+        <div className="terms-body">
+          {tab === "privacidade" && <div>
+            <h3>Quais dados são coletados</h3>
+            <p>Nenhum dado pessoal: sem cadastro, login, nome, e-mail, telefone, localização ou arquivos enviados a servidores nossos. As únicas conexões são técnicas e opcionais — fontes tipográficas (Google) e download de provas do repositório oficial (GitHub) quando você escolhe — e nesses casos o servidor de terceiros pode ver dados da conexão, como o endereço IP.</p>
+            <h3>Como são armazenados</h3>
+            <p>Tudo fica só no seu aparelho (armazenamento local e IndexedDB): provas, tentativas, histórico e temas. Nada é guardado em servidores nossos.</p>
+            <h3>Como são utilizados</h3>
+            <p>Os dados locais servem apenas para o app funcionar offline (abrir o acervo, contar acertos, ordenar matérias). Nada é usado para publicidade, analytics ou telemetria.</p>
+            <h3>Direitos do usuário (LGPD/GDPR)</h3>
+            <p>Você tem os direitos de acesso, correção e exclusão previstos na LGPD (Lei 13.709/2018) e no GDPR. Como não tratamos dados pessoais, não há o que consultar ou excluir em nossos sistemas; para apagar tudo do aparelho, basta limpar os dados ou desinstalar o app.</p>
+            <h3>Como contatar o desenvolvedor</h3>
+            <p>E-mail: mmr05@hotmail.com · Telefone: 11978831938.</p>
+          </div>}
+          {tab === "termos" && <div>
+            <h3>Como o aplicativo funciona</h3>
+            <p>O kuaa Estudante é um app de estudo offline: acervo de provas e quizzes no aparelho, modos prova, questão rápida, ritmo e quiz, com progresso salvo localmente. Pacotes novos podem ser baixados do repositório oficial dentro do app.</p>
+            <h3>Uso permitido</h3>
+            <p>Uso pessoal e educacional, sempre dentro da lei. É permitido estudar, importar pacotes oficiais e usar temas e sons importados.</p>
+            <h3>O que é proibido</h3>
+            <p>É proibido qualquer uso ilegal (incluindo fraude em provas e concursos), redistribuir ou vender o app ou o acervo, e tentar burlar a ativação ou extrair o conteúdo para republicação.</p>
+            <h3>Propriedade intelectual</h3>
+            <p>O aplicativo, sua interface, textos e questões pertencem ao desenvolvedor ou a licenciantes. Esta licença de uso não transfere nenhum direito de propriedade.</p>
+            <h3>Demonstração gratuita</h3>
+            <p>A versão de demonstração funciona por um mês após a primeira instalação. Depois desse prazo, o app pede um código de ativação para continuar.</p>
+            <h3>Como adquirir a versão licenciada</h3>
+            <p>Fale conosco pelos mesmos canais: mmr05@hotmail.com · 11978831938.</p>
+          </div>}
+          {tab === "aviso" && <div>
+            <h3>Limites de uso</h3>
+            <p>O app é material de estudo e não garante aprovação, nota ou resultado em provas e concursos. Use respeitando as leis e os editais aplicáveis.</p>
+            <h3>Funcionalidades não projetadas</h3>
+            <p>Não nos responsabilizamos por usos fora do projetado: o app não é documento oficial, não certifica conhecimento e não substitui orientação profissional.</p>
+            <h3>Uso indevido</h3>
+            <p>Não nos responsabilizamos por danos decorrentes de uso indevido, fraude, cola ou decisões tomadas com base nos resultados do app.</p>
+          </div>}
+        </div>
+        <div className="terms-foot">
+          <button className="terms-btn-quit" onClick={quit}>Quero sair</button>
+          <button className="terms-btn-accept" onClick={accept}>Eu concordo</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 export default function Home() {
   const embedded = window as Window & { __KUAA_MODE__?: string; __KUAA_DEVICE__?: string; __KUAA_VIEW__?: string };
   const startup = new URLSearchParams(window.location.search);
@@ -2262,6 +2357,16 @@ export default function Home() {
   const [view, setView] = useState<View>("student");
   const nativeStudentShell = studentOnly && (window.location.protocol === "capacitor:" || Boolean((window as Window & { Capacitor?: unknown }).Capacitor));
   const [activationGrant, setActivationGrant] = useState<ActivationGrant | null>(() => readActivationGrant());
+  const [termsGate, setTermsGate] = useState<{ status: "checking" | "show" | "ok"; app: string }>({ status: "checking", app: APP_VERSION_FALLBACK });
+  useEffect(() => {
+    let on = true;
+    currentAppVersion().then((v) => {
+      if (!on) return;
+      const rec = readTermsAccept();
+      setTermsGate({ status: rec && rec.terms === TERMS_VERSION && rec.app === v ? "ok" : "show", app: v });
+    }).catch(() => { if (on) setTermsGate({ status: "show", app: APP_VERSION_FALLBACK }); });
+    return () => { on = false; };
+  }, []);
   const forceActivationPreview = startup.get("activation") === "preview";
   const [activationClock, setActivationClock] = useState<{ now: Date; source: "checking" | "online" | "local" }>(() => ({ now: new Date(), source: studentOnly && !forceActivationPreview ? "checking" : "local" }));
   const activationRequired = studentOnly && (forceActivationPreview || isStudentActivationRequired(activationClock.now));
@@ -2352,6 +2457,8 @@ export default function Home() {
   }, [forceActivationPreview, studentOnly]);
   const openStudent = (examId: string) => { setSelectedExamId(examId); setView("student"); };
   const openReview = (examId: string) => { setSelectedExamId(examId); setView("admin"); window.localStorage.setItem("kuaa-review-target", examId); };
+  if (termsGate.status === "checking") return null;
+  if (termsGate.status === "show") return <TermsGate appVersion={termsGate.app} onAccepted={() => setTermsGate((s) => ({ ...s, status: "ok" }))} />;
   if (studentOnly && activationClock.source === "checking" && !forceActivationPreview) return <StudentTimeCheck />;
   if (activationRequired && !isActivationGrantValid(activationGrant, activationClock.now)) return <StudentActivationGate currentGrant={activationGrant} now={activationClock.now} onActivate={setActivationGrant} />;
   return <div className="app-shell">{!studentOnly && <><aside className="app-sidebar"><BrandMark /><nav aria-label="Áreas da prévia" className="sidebar-nav"><button className={view === "admin" ? "is-active" : ""} onClick={() => setView("admin")}><LayoutDashboard size={19} /><span>Intermediadora</span><i>01</i></button><button className={view === "student" ? "is-active" : ""} onClick={() => setView("student")}><GraduationCap size={19} /><span>Estudante</span><i>02</i></button></nav><div className="sidebar-bottom"><div className="backup-card"><Archive size={18} /><p><strong>Dados locais</strong><span>Revisão sem internet</span></p></div><p className="sidebar-note">A IA é usada apenas quando você decide enviar o par de PDFs a um serviço externo. A revisão e o estudo continuam locais.</p></div></aside><header className="mobile-header"><BrandMark compact /><div className="mobile-tabs"><button className={view === "admin" ? "is-active" : ""} onClick={() => setView("admin")}>Intermediadora</button><button className={view === "student" ? "is-active" : ""} onClick={() => setView("student")}>Estudante</button></div></header></>}<div className="app-main"><><StudentPreview exams={exams} selectedExamId={selectedExamId} onChange={setExams} onSelected={setSelectedExamId} attempts={attempts} onAttempt={(attempt) => setAttempts((items) => [...items, attempt])} onQuickEvent={(event) => setQuickEvents((items) => [...items, event])} /><StudentCredit /></></div></div>;
