@@ -1112,8 +1112,6 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
     } finally { window.clearTimeout(timer); }
   };
   useEffect(() => { if (showImportModal && repoStatus === "idle") void fetchRepoManifest(); }, [showImportModal, repoStatus]);
-  const isSingleOptionGroup = (pasta: string) => /º ano/.test(pasta) || pasta === "Técnico" || pasta.indexOf("Quiz/") === 0;
-  const singleOptionLabel = (pasta: string) => pasta.indexOf("Quiz/") === 0 && pasta.split("/").pop() ? String(pasta.split("/").pop()) : pasta;
   const importRepoPackages = async (pacotes: KuaaRepoPackage[], rotulo: string) => {
     if (repoDownloading) return;
     setRepoDownloading(rotulo);
@@ -1157,21 +1155,71 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
     if (atualizados > 0) return "ATUALIZADO";
     return "";
   };
-  const repoGroups = useMemo(() => {
-    if (!repoManifest) return [] as { pasta: string; itens: KuaaRepoPackage[] }[];
+  const QUIZ_EMOJI: Record<string, string> = {
+    "Relacionamentos e Amor": "❤️",
+    "Sobrevivência e Resiliência": "🌪️",
+    "Identidade e Estilo Pessoal": "🍬",
+    "Ambição, Sucesso e Tempo": "🎯",
+    "Energia, Ritmo e Arquétipos Animais": "🐾",
+    "Família e Heranças Emocionais": "👨‍👩‍👧",
+    "Amizades e Vínculos Sociais": "🤝",
+    "Autoconhecimento e Comportamento": "🧠",
+    "Adaptabilidade e Rotina": "🧩",
+  };
+  const QUIZ_ORDEM = ["Relacionamentos e Amor", "Sobrevivência e Resiliência", "Identidade e Estilo Pessoal", "Ambição, Sucesso e Tempo", "Energia, Ritmo e Arquétipos Animais", "Família e Heranças Emocionais", "Amizades e Vínculos Sociais", "Autoconhecimento e Comportamento", "Adaptabilidade e Rotina"];
+  const ANOS_EM = ["1º ano EM", "2º ano EM", "3º ano EM"];
+  const ANOS_EF = ["5º ano", "6º ano", "7º ano", "8º ano", "9º ano"];
+  type NivelLinha = { key: string; rotulo: React.ReactNode; detalhe: string; badge: string; pacotes: KuaaRepoPackage[]; downloadLabel: string };
+  type NivelGrupo = { titulo: string; linhas: NivelLinha[] };
+  const rotuloAno = (pasta: string) => pasta.replace(" EM", "");
+  const rotuloAmigavel = (pasta: string, arquivo: string) => {
+    if (arquivo === "tecnico_enfermagem") return "Técnico em enfermagem";
+    if (pasta.indexOf("Quiz/") === 0) return arquivo;
+    return friendlyRepoName(arquivo);
+  };
+  const niveis = useMemo(() => {
+    if (!repoManifest) return [] as NivelGrupo[];
     const q = repoSearch.trim().toLowerCase();
-    const map = new Map<string, KuaaRepoPackage[]>();
+    const porPasta = new Map<string, KuaaRepoPackage[]>();
     for (const pkg of repoManifest.pacotes) {
-      const label = pkg.arquivo.replace(/_/g, " ").toLowerCase();
-      if (q && !label.includes(q) && !pkg.pasta.toLowerCase().includes(q)) continue;
-      const list = map.get(pkg.pasta) || [];
+      const list = porPasta.get(pkg.pasta) || [];
       list.push(pkg);
-      map.set(pkg.pasta, list);
+      porPasta.set(pkg.pasta, list);
     }
-    const order = ["Ensino Superior", "5º ano", "6º ano", "7º ano", "8º ano", "9º ano", "1º ano EM", "2º ano EM", "3º ano EM", "Técnico", "Quiz/Autoconhecimento", "Quiz/Bem-estar", "Quiz/Diversão", "Quiz/Relacionamentos"];
-    return Array.from(map.entries())
-      .sort((a: [string, KuaaRepoPackage[]], b: [string, KuaaRepoPackage[]]) => (order.indexOf(a[0]) === -1 ? 99 : order.indexOf(a[0])) - (order.indexOf(b[0]) === -1 ? 99 : order.indexOf(b[0])) || a[0].localeCompare(b[0], "pt-BR"))
-      .map(([pasta, itens]: [string, KuaaRepoPackage[]]) => ({ pasta, itens: itens.sort((x: KuaaRepoPackage, y: KuaaRepoPackage) => x.arquivo.localeCompare(y.arquivo, "pt-BR")) }));
+    const casa = (texto: string) => !q || texto.toLowerCase().includes(q);
+    const out: NivelGrupo[] = [];
+    const sup = porPasta.get("Ensino Superior") || [];
+    const linhasSup: NivelLinha[] = sup
+      .filter((p) => casa(`${p.pasta} ${friendlyRepoName(p.arquivo)}`))
+      .sort((x, y) => x.arquivo.localeCompare(y.arquivo, "pt-BR"))
+      .map((p) => ({ key: p.caminho, rotulo: <><em>{friendlyRepoName(p.arquivo)}</em></>, detalhe: `${p.provas} prova(s) · ${p.questoes} questões`, badge: groupBadge([p]), pacotes: [p], downloadLabel: friendlyRepoName(p.arquivo) }));
+    if (linhasSup.length) out.push({ titulo: `Ensino Superior (${linhasSup.length})`, linhas: linhasSup });
+    const montaAnos = (titulo: string, pastas: string[]): NivelLinha[] => pastas
+      .map((pasta) => ({ pasta, itens: porPasta.get(pasta) || [] }))
+      .filter((g) => g.itens.length > 0 && casa(`${titulo} ${g.pasta}`))
+      .map((g) => {
+        const somaProvas = g.itens.reduce((s, p) => s + p.provas, 0);
+        const somaQuestoes = g.itens.reduce((s, p) => s + p.questoes, 0);
+        return { key: g.pasta, rotulo: <><em>{rotuloAno(g.pasta)}</em></>, detalhe: `${somaProvas} prova(s) · ${somaQuestoes} questões`, badge: groupBadge(g.itens), pacotes: g.itens, downloadLabel: rotuloAno(g.pasta) };
+      });
+    const linhasEM = montaAnos("Ensino Médio", ANOS_EM);
+    if (linhasEM.length) out.push({ titulo: "Ensino Médio", linhas: linhasEM });
+    const linhasEF = montaAnos("Ensino Fundamental", ANOS_EF);
+    if (linhasEF.length) out.push({ titulo: "Ensino Fundamental", linhas: linhasEF });
+    const tec = porPasta.get("Técnico") || [];
+    const linhasTec: NivelLinha[] = tec
+      .filter((p) => casa(`Técnico ${rotuloAmigavel(p.pasta, p.arquivo)}`))
+      .map((p) => ({ key: p.caminho, rotulo: <><em>{rotuloAmigavel(p.pasta, p.arquivo)}</em></>, detalhe: `${p.provas} prova(s) · ${p.questoes} questões`, badge: groupBadge([p]), pacotes: [p], downloadLabel: rotuloAmigavel(p.pasta, p.arquivo) }));
+    if (linhasTec.length) out.push({ titulo: "Técnico", linhas: linhasTec });
+    const linhasQuiz: NivelLinha[] = [];
+    for (const tema of QUIZ_ORDEM) {
+      const pasta = `Quiz/${tema}`;
+      const itens = porPasta.get(pasta) || [];
+      if (!itens.length || !casa(`Quiz ${tema}`)) continue;
+      linhasQuiz.push({ key: pasta, rotulo: <>{QUIZ_EMOJI[tema] || "🧩"} <em>{tema}</em></>, detalhe: `${itens.reduce((s, p) => s + p.provas, 0)} teste(s)`, badge: groupBadge(itens), pacotes: itens, downloadLabel: tema });
+    }
+    if (linhasQuiz.length) out.push({ titulo: "Quiz", linhas: linhasQuiz });
+    return out;
   }, [repoManifest, repoSearch]);
   const repoNewsCount = useMemo(() => {
     if (!repoManifest) return 0;
@@ -1191,39 +1239,23 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
           <p className="import-modal-note">{repoManifest.totais.arquivos} pacotes · {repoManifest.totais.provas} provas · {repoManifest.totais.questoes} questões{repoNewsCount > 0 ? ` · ${repoNewsCount} novidade(s)` : " · tudo em dia"}</p>
           <input className="import-modal-search" type="search" placeholder="Buscar no acervo…" value={repoSearch} onChange={(e) => setRepoSearch(e.target.value)} aria-label="Buscar no acervo" />
           <div className="import-modal-groups">
-            {repoGroups.map((group) => {
-              const somaProvas = group.itens.reduce((s, p) => s + p.provas, 0);
-              const somaQuestoes = group.itens.reduce((s, p) => s + p.questoes, 0);
-              const badge = groupBadge(group.itens);
-              const busy = repoDownloading === group.pasta;
-              if (isSingleOptionGroup(group.pasta)) {
-                return (
-                  <section key={group.pasta} className="import-modal-year">
-                    <div><strong>{singleOptionLabel(group.pasta)} · {somaProvas} prova(s) · {somaQuestoes} questões</strong> {badge && <span className="import-modal-badge">{badge}</span>}</div>
-                    <button disabled={busy} onClick={() => void importRepoPackages(group.itens, singleOptionLabel(group.pasta))} aria-label={`Baixar ${singleOptionLabel(group.pasta)}`}>{busy ? "Baixando…" : "Baixar"}</button>
-                  </section>
-                );
-              }
-              return (
-              <section key={group.pasta}>
-                <h3>{group.pasta} <small>({group.itens.length})</small></h3>
+            {niveis.map((nivel) => (
+              <section key={nivel.titulo}>
+                <h3>{nivel.titulo}</h3>
                 <ul>
-                  {group.itens.map((pkg) => {
-                    const seen = repoImports[pkg.caminho];
-                    const pbadge = !seen ? "NOVO" : pkg.atualizadoEm > seen ? "ATUALIZADO" : "";
-                    const pbusy = repoDownloading === pkg.caminho;
+                  {nivel.linhas.map((linha) => {
+                    const busy = repoDownloading === linha.key;
                     return (
-                      <li key={pkg.caminho}>
-                        <div><strong>• {friendlyRepoName(pkg.arquivo)}</strong> <small>{pkg.provas} prova(s) · {pkg.questoes} questões</small> {pbadge && <span className="import-modal-badge">{pbadge}</span>}</div>
-                        <button disabled={pbusy} onClick={() => void importRepoPackages([pkg], friendlyRepoName(pkg.arquivo))} aria-label={`Baixar ${pkg.arquivo}`}>{pbusy ? "Baixando…" : "Baixar"}</button>
+                      <li key={linha.key}>
+                        <div><strong>· {linha.rotulo}</strong> <small>{linha.detalhe}</small> {linha.badge && <span className="import-modal-badge">{linha.badge}</span>}</div>
+                        <button disabled={busy} onClick={() => void importRepoPackages(linha.pacotes, linha.downloadLabel)} aria-label={`Baixar ${linha.downloadLabel}`}>{busy ? "Baixando…" : "Baixar"}</button>
                       </li>
                     );
                   })}
                 </ul>
               </section>
-              );
-            })}
-            {!repoGroups.length && <p className="import-modal-note">Nada encontrado para “{repoSearch}”.</p>}
+            ))}
+            {!niveis.length && <p className="import-modal-note">Nada encontrado para “{repoSearch}”.</p>}
           </div>
         </>}
       </div>
