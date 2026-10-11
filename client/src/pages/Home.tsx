@@ -1156,7 +1156,7 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
       list.push(pkg);
       map.set(pkg.pasta, list);
     }
-    const order = ["Ensino Superior", "Fundamental e Médio", "Técnico", "Quiz"];
+    const order = ["Ensino Superior", "5º ano", "6º ano", "7º ano", "8º ano", "9º ano", "1º ano EM", "2º ano EM", "3º ano EM", "Técnico", "Quiz/Autoconhecimento", "Quiz/Bem-estar", "Quiz/Diversão", "Quiz/Relacionamentos"];
     return Array.from(map.entries())
       .sort((a: [string, KuaaRepoPackage[]], b: [string, KuaaRepoPackage[]]) => (order.indexOf(a[0]) === -1 ? 99 : order.indexOf(a[0])) - (order.indexOf(b[0]) === -1 ? 99 : order.indexOf(b[0])) || a[0].localeCompare(b[0], "pt-BR"))
       .map(([pasta, itens]: [string, KuaaRepoPackage[]]) => ({ pasta, itens: itens.sort((x: KuaaRepoPackage, y: KuaaRepoPackage) => x.arquivo.localeCompare(y.arquivo, "pt-BR")) }));
