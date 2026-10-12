@@ -362,6 +362,7 @@
   .terms-btn-accept { border:1px solid #1e7e34; background:#1e7e34; color:#fff; border-radius:6px; padding:10px 18px; font-size:13px; font-weight:700; cursor:pointer; }
   .terms-btn-accept:hover { background:#166429; }
   .terms-blackout { position:fixed; inset:0; z-index:200; background:#000; }
+  .settings-drive-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
   .form-stats-sheet { max-width:640px; text-align:left; }
   .form-stats-sheet h1 { text-align:left; }
   .form-stats-question { margin-top:22px; padding-top:16px; border-top:1px solid #d2ddda; }
