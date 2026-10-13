@@ -833,42 +833,67 @@ function normalizeExamPayload(raw: Record<string, unknown>, fallback = "prova-im
     const value = item as Record<string, unknown>;
     return [String(value.id || ""), String(value.text || "")];
   }) : []);
-  const questions = (Array.isArray(raw.questions) ? raw.questions : []).map((item, index): Question => {
+  const rawFinais = Array.isArray(raw.quizFinais) ? raw.quizFinais : Array.isArray(raw.finais) ? raw.finais : undefined;
+  const quizFinais = rawFinais ? rawFinais.map((item) => { const value = item as Record<string, unknown>; return { id: String(value.id || ""), titulo: String(value.titulo || ""), texto: String(value.texto || "") }; }) : undefined;
+  // Quiz em PT ("valores": "0,1,0") precisa dos finais p/ virar pontos.
+  const pontosDeValores = (valores: unknown): Record<string, number> | undefined => {
+    if (typeof valores !== "string" || !quizFinais?.length) return undefined;
+    const out: Record<string, number> = {};
+    valores.split(",").forEach((s, idx) => { if (idx < quizFinais.length) out[quizFinais[idx].id] = Number(s.trim()) || 0; });
+    return out;
+  };
+  // Aceita os três envelopes: student (questions), kuaa/ prova (questoes) e kuaa/ quiz/form (perguntas).
+  const rawQuestions = Array.isArray(raw.questions) ? raw.questions : Array.isArray(rawExam.questions) ? rawExam.questions : Array.isArray(raw.questoes) ? raw.questoes : Array.isArray(raw.perguntas) ? raw.perguntas : [];
+  const questions = rawQuestions.map((item, index): Question => {
     const value = item as Record<string, unknown>;
-    const alternatives = Array.isArray(value.alternatives) ? value.alternatives.map((option) => {
+    const rawAlts = Array.isArray(value.alternatives) ? value.alternatives : Array.isArray(value.alternativas) ? value.alternativas : [];
+    const parsedAlts = rawAlts.map((option) => {
       const alternative = option as Record<string, unknown>;
-      const kind = alternative.kind === "discursiva" ? "discursiva" as const : undefined;
-      const pontos = alternative.pontos && typeof alternative.pontos === "object" ? alternative.pontos as Record<string, number> : undefined;
-      return { id: String(alternative.id || ""), text: String(alternative.text || ""), kind, maxLength: typeof alternative.maxLength === "number" ? alternative.maxLength : undefined, placeholder: typeof alternative.placeholder === "string" ? alternative.placeholder : undefined, pontos };
-    }).filter((option) => option.id && (option.text || option.kind === "discursiva")) : [];
-    const answer = String(value.correctAnswer || value.correct || "");
+      const kind = alternative.kind === "discursiva" || alternative.tipo === "discursiva" ? "discursiva" as const : undefined;
+      const pontos = alternative.pontos && typeof alternative.pontos === "object" ? alternative.pontos as Record<string, number> : pontosDeValores(alternative.valores);
+      const maxLength = typeof alternative.maxLength === "number" ? alternative.maxLength : typeof alternative.limite === "number" ? alternative.limite : undefined;
+      const placeholder = typeof alternative.placeholder === "string" ? alternative.placeholder : undefined;
+      return { id: String(alternative.id || ""), text: String(alternative.text || alternative.texto || ""), kind, maxLength, placeholder, pontos, correta: alternative.correta === true };
+    }).filter((option) => option.id && (option.text || option.kind === "discursiva"));
+    // Gabarito: explícito (correct/correctAnswer) ou derivado de correta:true (contrato kuaa/).
+    let answer = String(value.correctAnswer || value.correct || "");
+    if (!answer) {
+      const marcadas = parsedAlts.filter((a) => a.correta).map((a) => a.id);
+      if (marcadas.length) answer = marcadas.join("");
+    }
+    const alternatives = parsedAlts.map(({ correta, ...rest }) => rest);
     const visual = value.visualStatus === "needed" || value.visualStatus === "not_needed" ? value.visualStatus : "pending";
-    const number = String(value.number || value.originalNumber || index + 1);
-    const difficulty = ["facil", "media", "dificil"].includes(String(value.difficulty)) ? (value.difficulty as Difficulty) : undefined;
+    const number = String(value.number || value.originalNumber || value.numeracao || index + 1);
+    const difRaw = String(value.difficulty || "");
+    const difPt = String(value.dificuldade || "");
+    const difficulty = (["facil", "media", "dificil"].includes(difRaw) ? value.difficulty : ["facil", "media", "dificil"].includes(difPt) ? value.dificuldade : undefined) as Difficulty | undefined;
     const type = ["unica", "multipla", "discursiva"].includes(String(value.type)) ? (value.type as QuestionType) : "unica";
     // Aceita o gabarito se: for "ANULADA", for ID legado (A-F, ou AC/ABDE...), ou for ID kuaa/ (A01, A02...)
     // que corresponde a uma das alternativas da questão.
     const altIds = alternatives.map((a) => a.id);
     const isValidCorrect = answer === "ANULADA" || ["A", "B", "C", "D", "E", "F"].includes(answer) || /^[A-F]{2,}$/.test(answer) || (answer && altIds.some((aid) => aid === answer || answer.split(",").includes(aid)));
     const rawSubject = String(value.subjectSuggested || value.subject || "");
-    const subjectParts = rawSubject.split(/\s*(?:>|—|–)\s*/).map((s) => s.trim()).filter(Boolean);
+    const materiaChain = [value.materia, value.assunto, value.tema, value.topico].map((s) => String(s || "").trim()).filter(Boolean).join(" > ");
+    const subject = rawSubject || materiaChain;
+    const subjectParts = subject.split(/\s*(?:>|—|–)\s*/).map((s) => s.trim()).filter(Boolean);
     const pickLevel = (explicit: unknown, fallback: string | undefined) => typeof explicit === "string" && explicit.trim() ? explicit.trim() : fallback;
     const assunto = pickLevel(value.assunto, subjectParts[1]);
     const tema = pickLevel(value.tema, subjectParts[2]);
     const topico = pickLevel(value.topico, subjectParts[3]);
-    return { id: Number(value.id) || index + 1, originalNumber: number, label: `Questão ${number}`, text: String(value.statement || value.text || ""), alternatives, correct: isValidCorrect ? answer : "", subject: rawSubject, assunto, tema, topico, baseText: String(value.baseText || baseTexts.get(String(value.baseTextId || "")) || ""), imageRequired: visual === "needed", imageUrl: typeof value.imageUrl === "string" ? value.imageUrl : undefined, imageName: typeof value.imageName === "string" ? value.imageName : undefined, visualStatus: visual, visualNotes: String(value.imageDescription || value.visualNotes || value.reviewNotes || ""), difficulty, type, expectedAnswer: typeof value.expectedAnswer === "string" ? value.expectedAnswer : undefined, points: typeof value.points === "number" ? value.points : undefined, estimatedMinutes: typeof value.estimatedMinutes === "number" ? value.estimatedMinutes : undefined, minSelect: typeof value.minSelect === "number" ? value.minSelect : undefined, maxSelect: typeof value.maxSelect === "number" ? value.maxSelect : undefined };
+    return { id: Number(value.id) || index + 1, originalNumber: number, label: `Questão ${number}`, text: String(value.statement || value.text || value.enunciado || ""), alternatives, correct: isValidCorrect ? answer : "", subject, assunto, tema, topico, baseText: String(value.baseText || baseTexts.get(String(value.baseTextId || "")) || value.texto_apoio || ""), imageRequired: visual === "needed", imageUrl: typeof value.imageUrl === "string" ? value.imageUrl : undefined, imageName: typeof value.imageName === "string" ? value.imageName : undefined, visualStatus: visual, visualNotes: String(value.imageDescription || value.visualNotes || value.reviewNotes || ""), difficulty, type, expectedAnswer: typeof value.expectedAnswer === "string" ? value.expectedAnswer : undefined, points: typeof value.points === "number" ? value.points : typeof value.pontuacao === "number" ? value.pontuacao : undefined, estimatedMinutes: typeof value.estimatedMinutes === "number" ? value.estimatedMinutes : typeof value.tempo === "number" ? value.tempo : undefined, minSelect: typeof value.minSelect === "number" ? value.minSelect : undefined, maxSelect: typeof value.maxSelect === "number" ? value.maxSelect : undefined };
   });
-  const city = String(rawExam.city || raw.city || "Município não informado");
-  const title = String(rawExam.title || rawExam.organization || rawExam.contest || raw.title || "Prova importada");
-  const kind = raw.kind === "quiz" || raw.kind === "formulario" ? raw.kind : "prova";
+  const city = String(rawExam.city || raw.city || rawExam.cidade || raw.cidade || "Município não informado");
+  const title = String(rawExam.title || rawExam.organization || rawExam.contest || raw.title || rawExam.titulo || raw.titulo || "Prova importada");
+  // kind pode vir no topo, dentro de exam{} ou em PT (tipo) — formulário e quiz dependem disso.
+  const kindRaw = String(raw.kind || rawExam.kind || raw.tipo || rawExam.tipo || "");
+  const kind = kindRaw === "quiz" || kindRaw === "formulario" ? kindRaw : "prova";
   // Quiz e Formulário não têm cargo profissional de verdade — pular inferExamRole evita bloqueios
   // por regras pensadas só para provas (ex.: títulos de quiz que contêm palavras comuns).
-  const role = kind === "prova" ? inferExamRole({ role: rawExam.role || raw.role, cargo: rawExam.cargo, title, evidence: questions }) : String(rawExam.role || raw.role || title);
+  const role = kind === "prova" ? inferExamRole({ role: rawExam.role || raw.role || rawExam.cargo || raw.cargo, cargo: rawExam.cargo || raw.cargo, title, evidence: questions }) : String(rawExam.role || raw.role || title);
   const pointsByDifficulty = raw.pointsByDifficulty && typeof raw.pointsByDifficulty === "object" ? raw.pointsByDifficulty as Record<Difficulty, number> : undefined;
-  const quizFinais = Array.isArray(raw.quizFinais) ? raw.quizFinais.map((item) => { const value = item as Record<string, unknown>; return { id: String(value.id || ""), titulo: String(value.titulo || ""), texto: String(value.texto || "") }; }) : undefined;
   const quizDesempate: 1 | 2 | undefined = raw.quizDesempate === 2 ? 2 : raw.quizDesempate === 1 ? 1 : undefined;
-  const formAnonimo = typeof raw.formAnonimo === "boolean" ? raw.formAnonimo : undefined;
-  const record = { id: String(raw.id || ""), title, city, state: String(rawExam.state || raw.state || ""), year: String(rawExam.year || raw.year || ""), board: String(rawExam.board || raw.board || ""), booklet: String(rawExam.booklet || raw.booklet || ""), role, status: String(raw.status || "Revisão pendente"), questions, updatedAt: String(raw.updatedAt || new Date().toISOString()), pointsByDifficulty, ungraded: typeof raw.ungraded === "boolean" ? raw.ungraded : undefined, kind: kind as ExamRecord["kind"], quizFinais, quizDesempate, formAnonimo };
+  const formAnonimo = typeof raw.formAnonimo === "boolean" ? raw.formAnonimo : typeof raw.anonimato === "boolean" ? raw.anonimato : undefined;
+  const record = { id: String(raw.id || rawExam.id || ""), title, city, state: String(rawExam.state || raw.state || rawExam.pais || raw.pais || ""), year: String(rawExam.year || raw.year || rawExam.ano || raw.ano || ""), board: String(rawExam.board || raw.board || rawExam.banca || raw.banca || ""), booklet: String(rawExam.booklet || raw.booklet || rawExam.tematica || raw.tematica || ""), role, status: String(raw.status || "Revisão pendente"), questions, updatedAt: String(raw.updatedAt || new Date().toISOString()), pointsByDifficulty, ungraded: typeof raw.ungraded === "boolean" ? raw.ungraded : undefined, kind: kind as ExamRecord["kind"], quizFinais, quizDesempate, formAnonimo };
   return { ...record, id: record.id || examFingerprint(record) || fallback };
 }
 

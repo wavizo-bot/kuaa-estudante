@@ -94,7 +94,8 @@ export type KuaaQuizQuestion = {
 const SECTION_DIVIDER = /^\s*\/\/\/\s*$/;
 const KV_REGEX = /^([a-z_]+)\s*:\s*(.*)$/i;
 const ALT_REGEX = /^alternativa\s*:\s*([^|]+)\|([^|]+)\|(.+)$/i;
-const DISCURSIVA_REGEX = /^discursiva\s*:\s*([^|]+)\|(\d+)\|(.*)$/i;
+const DISCURSIVA_REGEX = /^discursiva\s*:\s*([^|]+?)\s*\|\s*(\d+)\s*\|(.*)$/i;
+const DADOS_REGEX = /^(dados\d*)\s*:\s*(.+)$/i;
 
 type TextSection = { kind: "kv" | "alternativa" | "discursiva" | "comment" | "blank"; key?: string; value?: string; raw: string };
 
@@ -115,6 +116,10 @@ function tokenizeKuaaText(raw: string): TextSection[] {
     }
     if ((m = trimmed.match(DISCURSIVA_REGEX))) {
       out.push({ kind: "discursiva", value: `${m[1].trim()}|${m[2].trim()}|${m[3].trim()}`, raw: trimmed });
+      continue;
+    }
+    if ((m = trimmed.match(DADOS_REGEX))) {
+      out.push({ kind: "kv", key: "dados", value: m[2].trim(), raw: trimmed });
       continue;
     }
     if ((m = trimmed.match(KV_REGEX))) {
@@ -141,7 +146,6 @@ function parseKuaaProvaText(raw: string, fallbackId: string): ExamRecord {
   let lastField: string | null = null;
   for (const tok of tokens) {
     if (tok.kind === "blank" || tok.kind === "comment") { lastField = null; continue; }
-    if (tok.kind !== "kv") continue;
     const key = tok.key || "";
     const value = (tok.value || "").trim();
     if (key === "questao") {
@@ -150,10 +154,10 @@ function parseKuaaProvaText(raw: string, fallbackId: string): ExamRecord {
       lastField = null;
       continue;
     }
-    if (key === "alternativa") {
+    if (tok.kind === "alternativa" || key === "alternativa") {
       if (!current) throw new Error("alternativa sem questão anterior");
       const [id, texto, marca] = (tok.value || "").split("|").map((s) => s.trim());
-      current.alternativas.push({ id, texto, correta: marca.toLowerCase() === "correta" });
+      current.alternativas.push({ id, texto, correta: (marca || "").toLowerCase() === "correta" });
       lastField = "alternativa";
       continue;
     }
@@ -173,7 +177,7 @@ function parseKuaaProvaText(raw: string, fallbackId: string): ExamRecord {
       (current as Record<string, unknown>)[lastField] = `${(current as Record<string, unknown>)[lastField] || ""}\n${value}`;
       continue;
     }
-    if (!current) {
+    if (!current && key) {
       exam[key] = value;
       lastField = null;
     }
@@ -193,7 +197,7 @@ function parseKuaaQuizText(raw: string, fallbackId: string): ExamRecord {
   let lastAlt: KuaaAlternative | null = null;
   for (const tok of tokens) {
     if (tok.kind === "blank" || tok.kind === "comment") { lastField = null; continue; }
-    if (tok.kind !== "kv") continue;
+    if (tok.kind !== "kv" && tok.kind !== "alternativa") continue;
     const key = tok.key || "";
     const value = (tok.value || "").trim();
     if (key === "pergunta") {
@@ -203,7 +207,7 @@ function parseKuaaQuizText(raw: string, fallbackId: string): ExamRecord {
       lastField = null;
       continue;
     }
-    if (key === "alternativa") {
+    if (tok.kind === "alternativa" || key === "alternativa") {
       if (!currentP) throw new Error("alternativa sem pergunta anterior");
       const parts = (tok.value || "").split("|").map((s) => s.trim());
       const id = parts[0];
@@ -264,9 +268,9 @@ function parseKuaaFormText(raw: string, fallbackId: string): ExamRecord {
     if (tok.kind !== "kv" && tok.kind !== "discursiva") continue;
     const key = tok.key || "";
     const value = (tok.value || "").trim();
-    if (key === "pergunta" || (tok.kind === "kv" && key === "dados")) {
+    if (key === "pergunta" || /^dados\d*$/i.test(key)) {
       if (currentP) perguntas.push(currentP);
-      const pid = tok.kind === "kv" && key === "dados" ? value : value;
+      const pid = value;
       currentP = { id: pid, enunciado: "", alternativas: [] };
       metaByPergunta[pid] = {};
       lastField = null;
@@ -282,7 +286,7 @@ function parseKuaaFormText(raw: string, fallbackId: string): ExamRecord {
       lastField = null;
       continue;
     }
-    if (key === "alternativa") {
+    if (tok.kind === "alternativa" || key === "alternativa") {
       if (!currentP) throw new Error("alternativa sem pergunta anterior");
       const parts = (tok.value || "").split("|").map((s) => s.trim());
       currentP.alternativas.push({ id: parts[0], texto: parts[1] || "", correta: false });
@@ -679,12 +683,20 @@ export function parseKuaaText(raw: string, fallbackId: string): ExamRecord {
       throw new Error(`JSON kuaa/ inválido: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
-  // Parser de texto
-  const isProva = /^\s*format\s*:\s*kuaa\/\s*\n\s*tipo\s*:\s*prova/im.test(raw) || /questao\s*:/im.test(raw);
-  const isQuiz = /tipo\s*:\s*quiz/im.test(raw) || /pergunta\s*:/im.test(raw);
-  const isForm = /tipo\s*:\s*formulario/im.test(raw) || /dados\d+\s*:/im.test(raw);
-  if (isQuiz && !isProva) return parseKuaaQuizText(raw, fallbackId);
-  if (isForm && !isProva) return parseKuaaFormText(raw, fallbackId);
+  // Tipo explícito sempre vence (formulário também usa "pergunta:").
+  const tipoMatch = raw.match(/^\s*tipo\s*:\s*(prova|quiz|formulario)\s*$/im);
+  if (tipoMatch) {
+    const t = tipoMatch[1].toLowerCase();
+    if (t === "quiz") return parseKuaaQuizText(raw, fallbackId);
+    if (t === "formulario") return parseKuaaFormText(raw, fallbackId);
+    return parseKuaaProvaText(raw, fallbackId);
+  }
+  // Sem tipo: marcadores no início da linha (não vale dentro de enunciado).
+  if (/^\s*dados\d*\s*:/im.test(raw)) return parseKuaaFormText(raw, fallbackId);
+  if (/^\s*questao\s*:/im.test(raw)) return parseKuaaProvaText(raw, fallbackId);
+  if (/^\s*final(_texto)?\s*:/im.test(raw) || /valores\s*:/im.test(raw) || /^\s*tematica\s*:/im.test(raw)) return parseKuaaQuizText(raw, fallbackId);
+  if (/^\s*discursiva\s*:/im.test(raw) || /^\s*anonimato\s*:/im.test(raw) || /^\s*minimo\s*:/im.test(raw) || /^\s*maximo\s*:/im.test(raw)) return parseKuaaFormText(raw, fallbackId);
+  if (/^\s*pergunta\s*:/im.test(raw)) return parseKuaaQuizText(raw, fallbackId);
   return parseKuaaProvaText(raw, fallbackId);
 }
 
