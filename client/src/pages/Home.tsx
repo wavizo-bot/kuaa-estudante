@@ -1143,7 +1143,7 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
         redirectUri = NATIVE_OAUTH_REDIRECT;
         code = await nativeOAuthCode(googleAuthUrl(redirectUri, challenge));
       } else {
-        redirectUri = `${window.location.origin}/oauth-callback.html`;
+        redirectUri = `${window.location.origin.replace("127.0.0.1", "localhost")}/oauth-callback.html`;
         try { window.localStorage.removeItem("kuaa-oauth-code"); } catch { /* ignora */ }
         const popup = window.open(googleAuthUrl(redirectUri, challenge), "kuaa-google-login", "width=520,height=700");
         if (!popup) throw new Error("O navegador bloqueou a janela. Permita popups e tente de novo.");

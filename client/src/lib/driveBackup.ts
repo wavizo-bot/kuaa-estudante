@@ -196,7 +196,7 @@ function nativePlugin(): NativeOAuthPlugin | null {
   } catch { return null; }
 }
 export const hasNativeOAuth = (): boolean => nativePlugin() !== null;
-export const NATIVE_OAUTH_REDIRECT = "http://127.0.0.1:8765/oauth/callback";
+export const NATIVE_OAUTH_REDIRECT = "http://localhost:8765/oauth/callback";
 
 export async function nativeOAuthCode(authUrl: string): Promise<string> {
   const plugin = nativePlugin();

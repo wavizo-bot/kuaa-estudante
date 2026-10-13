@@ -25,7 +25,7 @@ public class OAuthPlugin extends Plugin {
     private Dialog dialog;
     private WebView webView;
     private PluginCall activeCall;
-    private String redirectPrefix = "http://127.0.0.1";
+    private String redirectPrefix = "http://localhost";
 
     @PluginMethod
     public void startOAuth(PluginCall call) {
