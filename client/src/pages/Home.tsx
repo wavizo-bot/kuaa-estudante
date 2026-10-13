@@ -85,6 +85,7 @@ import { type ActivationGrant, createActivationCode, createActivationGrant, fetc
 import { calcularPontuacaoAdaptativa, calcularPontuacaoRitmoPressao, pesoBase, type QuestaoRespondida, type RitmoPressaoModo } from "@/lib/triAdaptativa";
 import { loadPerformanceHistory, savePerformanceRecord, clearPerformanceHistory, lastNProvas, countProvasByMonth, bestAndWorstSubjects, lastQuizResults, type PerformanceRecord } from "@/lib/performanceHistory";
 import { applyBackupPayload, buildBackupPayload, clearDriveToken, downloadBackup, exchangeCode, googleAuthUrl, hasNativeOAuth, nativeOAuthCode, NATIVE_OAUTH_REDIRECT, pkcePair, uploadBackup, validToken, waitPopupCode } from "@/lib/driveBackup";
+import { APP_VERSION } from "@/version";
 
 type View = "admin" | "student";
 type StudentScreen = "library" | "exam" | "exam-closed" | "summary" | "quick-setup" | "quick" | "settings" | "quiz" | "quiz-setup" | "quiz-result-detail" | "formulario" | "form-stats" | "prova-filters" | "ritmo-setup" | "ritmo" | "ritmo-resumo";
@@ -2317,7 +2318,7 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
             {visibleAchievements.length > 2 && medalsExpanded && <button className="medal-more-btn medal-collapse-btn" onClick={() => setMedalsExpanded(false)} aria-label="Recolher medalhas" title="Recolher">(-)</button>}
           </div>
           {medalsExpanded && visibleAchievements.length > 2 && <div className="medal-grid-expanded"><div className="medal-grid-inner">{visibleAchievements.map(({ category, nivel, colorido }) => <button key={category} className={`achievement-medal ${colorido ? "" : "is-grey"}`} onClick={() => setOpenAchievement(category)}><img src={`${ACHIEVEMENT_IMAGE_BASE}/${category}-${nivel}.png`} alt={ACHIEVEMENT_META[category].nomesPorNivel[nivel]} /></button>)}</div></div>}
-          <p className="eyebrow"><span className="pulse-dot" /> kuaa v1.3 · ACERVO LOCAL</p>
+          <p className="eyebrow"><span className="pulse-dot" /> kuaa v{APP_VERSION} · ACERVO LOCAL</p>
           <h1>Repetição útil, não repetição ao acaso.</h1>
           <div className="student-hero-quick-actions">
             <div className="student-hero-actions">
