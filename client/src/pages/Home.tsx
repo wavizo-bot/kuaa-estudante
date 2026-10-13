@@ -137,6 +137,7 @@ export type ExamRecord = {
   quizFinais?: { id: string; titulo: string; texto: string }[];
   quizDesempate?: 1 | 2;
   formAnonimo?: boolean;
+  aleatorio?: boolean;
 };
 
 type Difficulty = "facil" | "media" | "dificil";
@@ -893,7 +894,8 @@ function normalizeExamPayload(raw: Record<string, unknown>, fallback = "prova-im
   const pointsByDifficulty = raw.pointsByDifficulty && typeof raw.pointsByDifficulty === "object" ? raw.pointsByDifficulty as Record<Difficulty, number> : undefined;
   const quizDesempate: 1 | 2 | undefined = raw.quizDesempate === 2 ? 2 : raw.quizDesempate === 1 ? 1 : undefined;
   const formAnonimo = typeof raw.formAnonimo === "boolean" ? raw.formAnonimo : typeof raw.anonimato === "boolean" ? raw.anonimato : undefined;
-  const record = { id: String(raw.id || rawExam.id || ""), title, city, state: String(rawExam.state || raw.state || rawExam.pais || raw.pais || ""), year: String(rawExam.year || raw.year || rawExam.ano || raw.ano || ""), board: String(rawExam.board || raw.board || rawExam.banca || raw.banca || ""), booklet: String(rawExam.booklet || raw.booklet || rawExam.tematica || raw.tematica || ""), role, status: String(raw.status || "Revisão pendente"), questions, updatedAt: String(raw.updatedAt || new Date().toISOString()), pointsByDifficulty, ungraded: typeof raw.ungraded === "boolean" ? raw.ungraded : undefined, kind: kind as ExamRecord["kind"], quizFinais, quizDesempate, formAnonimo };
+  const aleatorio = typeof raw.aleatorio === "boolean" ? raw.aleatorio : typeof rawExam.aleatorio === "boolean" ? rawExam.aleatorio : undefined;
+  const record = { id: String(raw.id || rawExam.id || ""), title, city, state: String(rawExam.state || raw.state || rawExam.pais || raw.pais || ""), year: String(rawExam.year || raw.year || rawExam.ano || raw.ano || ""), board: String(rawExam.board || raw.board || rawExam.banca || raw.banca || ""), booklet: String(rawExam.booklet || raw.booklet || rawExam.tematica || raw.tematica || ""), role, status: String(raw.status || "Revisão pendente"), questions, updatedAt: String(raw.updatedAt || new Date().toISOString()), pointsByDifficulty, ungraded: typeof raw.ungraded === "boolean" ? raw.ungraded : undefined, kind: kind as ExamRecord["kind"], quizFinais, quizDesempate, formAnonimo, aleatorio };
   return { ...record, id: record.id || examFingerprint(record) || fallback };
 }
 
@@ -1088,12 +1090,14 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
   const [formResponses, setFormResponses] = useState<Record<string, FormResponse[]>>(() => { try { return JSON.parse(window.localStorage.getItem("kuaa-form-responses") || "{}"); } catch { return {}; } });
   useEffect(() => { window.localStorage.setItem("kuaa-form-responses", JSON.stringify(formResponses)); }, [formResponses]);
   const [formIndex, setFormIndex] = useState(0);
+  const [formQuestionOrder, setFormQuestionOrder] = useState<number[]>([]);
+  const [formAlternativeOrder, setFormAlternativeOrder] = useState<Record<number, string[]>>({});
   const [formChoices, setFormChoices] = useState<Record<number, string>>({});
   const [formTexts, setFormTexts] = useState<Record<string, string>>({});
   const [formStep, setFormStep] = useState<"questions" | "identify" | "done">("questions");
   const [formStatsFilter, setFormStatsFilter] = useState<string>("");
   const [formRespondentName, setFormRespondentName] = useState("");
-  const startForm = (examId: string) => { chooseExam(examId); setFormIndex(0); setFormChoices({}); setFormTexts({}); setFormRespondentName(""); setFormStep("questions"); setScreen("formulario"); };
+  const startForm = (examId: string) => { chooseExam(examId); setFormIndex(0); setFormChoices({}); setFormTexts({}); setFormRespondentName(""); setFormStep("questions"); const exam = studyExams.find((item) => item.id === examId); const items = exam?.questions || []; const embaralha = exam?.aleatorio === true; setFormQuestionOrder(embaralha ? shuffle(items.map((item) => item.id)) : items.map((item) => item.id)); setFormAlternativeOrder(Object.fromEntries(items.map((item) => [item.id, embaralha ? shuffle(item.alternatives.map((alt) => alt.id)) : item.alternatives.map((alt) => alt.id)]))); setScreen("formulario"); };
   const submitForm = (respondent: string) => {
     if (!activeExam) return;
     const response: FormResponse = { id: `${activeExam.id}-${Date.now()}`, respondent: respondent.trim() || "Anônimo", completedAt: new Date().toISOString(), choices: formChoices, texts: formTexts };
@@ -1473,7 +1477,7 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizQuestionOrder, setQuizQuestionOrder] = useState<number[]>([]);
   const [quizAlternativeOrder, setQuizAlternativeOrder] = useState<Record<number, string[]>>({});
-  const startQuiz = (examId: string) => { chooseExam(examId); setQuizAnswers({}); setQuizIndex(0); const exam = studyExams.find((item) => item.id === examId); const items = exam?.questions || []; setQuizQuestionOrder(shuffle(items.map((item) => item.id))); setQuizAlternativeOrder(Object.fromEntries(items.map((item) => [item.id, shuffle(item.alternatives.map((alt) => alt.id))]))); setScreen("quiz"); };
+  const startQuiz = (examId: string) => { chooseExam(examId); setQuizAnswers({}); setQuizIndex(0); const exam = studyExams.find((item) => item.id === examId); const items = exam?.questions || []; const embaralha = exam?.aleatorio === true; const orderedIds = embaralha ? shuffle(items.map((item) => item.id)) : items.map((item) => item.id); setQuizQuestionOrder(orderedIds); setQuizAlternativeOrder(Object.fromEntries(items.map((item) => [item.id, embaralha ? shuffle(item.alternatives.map((alt) => alt.id)) : item.alternatives.map((alt) => alt.id)]))); setScreen("quiz"); };
   const finishQuiz = () => {
     if (!activeExam || !activeExam.quizFinais?.length) return;
     const finalIds = activeExam.quizFinais.map((item) => item.id);
@@ -2039,8 +2043,9 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
   if (screen === "formulario" && activeExam?.kind === "formulario") {
     if (formStep === "done") return <main className={`workspace student-theme-${palette} quick-setup-workspace`}><section className="quiz-question-sheet"><p className="eyebrow">OBRIGADO</p><h1>Resposta registrada.</h1><p>Responder novamente este formulário?</p><div className="quiz-nav"><Button className="ink-button" onClick={() => startForm(activeExam.id)}>Sim, responder</Button><Button variant="outline" onClick={() => setScreen("library")}>Não, retornar</Button></div></section></main>;
     if (formStep === "identify") return <main className={`workspace student-theme-${palette} quick-setup-workspace`}><section className="quiz-question-sheet"><button className="back-link" onClick={() => setFormStep("questions")}><ArrowLeft size={17} /> Voltar às perguntas</button><p className="eyebrow">ÚLTIMA ETAPA</p><h1>Como você quer ser identificado?</h1><input value={formRespondentName} onChange={(event) => setFormRespondentName(event.target.value)} placeholder="Seu nome" /><div className="quiz-nav"><Button className="ink-button" disabled={!formRespondentName.trim()} onClick={() => submitForm(formRespondentName)}>Confirmar</Button>{activeExam.formAnonimo && <Button variant="outline" onClick={() => submitForm("Anônimo")}>Resposta anônima</Button>}</div></section></main>;
-    const question = activeExam.questions[formIndex];
-    const isLast = formIndex === activeExam.questions.length - 1;
+    const formOrderedQuestions = formQuestionOrder.length === activeExam.questions.length ? formQuestionOrder.map((id) => activeExam.questions.find((q) => q.id === id)!).filter(Boolean) : activeExam.questions;
+    const question = formOrderedQuestions[formIndex];
+    const isLast = formIndex === formOrderedQuestions.length - 1;
     const chosen = formChoices[question.id] || "";
     const isMultipla = question.type === "multipla";
     const selectedCount = chosen.length;
@@ -2058,7 +2063,7 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
       });
     };
     return <main className={`workspace student-theme-${palette} student-session`}><header className="session-header"><button className="back-link" onClick={() => setScreen("library")}><ArrowLeft size={17} /> Sair do formulário</button><div className="session-title"><span>{activeExam.title}</span></div></header>
-      <section className="quiz-question"><p className="eyebrow">PERGUNTA {formIndex + 1} DE {activeExam.questions.length}{question.minSelect || question.maxSelect ? ` · escolha ${question.minSelect === question.maxSelect ? `exatamente ${question.minSelect}` : question.maxSelect ? `até ${question.maxSelect}` : `ao menos ${question.minSelect}`}` : ""}</p><h2>{question.text}</h2><div className="alternatives">{question.alternatives.map((option, altIndex) => {
+      <section className="quiz-question"><p className="eyebrow">PERGUNTA {formIndex + 1} DE {formOrderedQuestions.length}{question.minSelect || question.maxSelect ? ` · escolha ${question.minSelect === question.maxSelect ? `exatamente ${question.minSelect}` : question.maxSelect ? `até ${question.maxSelect}` : `ao menos ${question.minSelect}`}` : ""}</p><h2>{question.text}</h2><div className="alternatives">{(formAlternativeOrder[question.id] || question.alternatives.map((o) => o.id)).map((altId) => question.alternatives.find((o) => o.id === altId)!).filter(Boolean).map((option, altIndex) => {
         if (option.kind === "discursiva") return <div key={option.id} className="alternative-discursiva"><span>{String.fromCharCode(65 + altIndex)}</span><textarea placeholder={option.placeholder || "Escreva sua resposta..."} maxLength={option.maxLength} value={formTexts[`${question.id}:${option.id}`] || ""} onChange={(event) => setFormTexts((values) => ({ ...values, [`${question.id}:${option.id}`]: event.target.value }))} /></div>;
         const isSelected = chosen.includes(option.id);
         const disabled = isMultipla && !isSelected && maxReached;

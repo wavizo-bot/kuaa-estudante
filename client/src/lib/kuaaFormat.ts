@@ -42,6 +42,7 @@ export type KuaaPackage = {
   titulo?: string;
   tematica?: string;
   anonimato?: boolean;
+  aleatorio?: boolean;
   questoes?: KuaaQuestion[];
   finais?: KuaaFinal[];
   perguntas?: KuaaQuizQuestion[]; // quiz
@@ -253,7 +254,8 @@ function parseKuaaQuizText(raw: string, fallbackId: string): ExamRecord {
   }
   if (currentP) perguntas.push(currentP);
   if (!perguntas.length) throw new Error("Nenhuma pergunta reconhecida no texto kuaa/.");
-  return kuaaToExamRecord({ format: "kuaa/", tipo: "quiz", id: top.id || fallbackId, titulo: top.titulo, tematica: top.tematica, finais, perguntas });
+  const boolPt = (v: string | undefined) => v === "sim" || v === "true";
+  return kuaaToExamRecord({ format: "kuaa/", tipo: "quiz", id: top.id || fallbackId, titulo: top.titulo, tematica: top.tematica, aleatorio: boolPt(top.aleatorio), finais, perguntas });
 }
 
 function parseKuaaFormText(raw: string, fallbackId: string): ExamRecord {
@@ -265,7 +267,7 @@ function parseKuaaFormText(raw: string, fallbackId: string): ExamRecord {
   let lastField: string | null = null;
   for (const tok of tokens) {
     if (tok.kind === "blank" || tok.kind === "comment") { lastField = null; continue; }
-    if (tok.kind !== "kv" && tok.kind !== "discursiva") continue;
+    if (tok.kind !== "kv" && tok.kind !== "discursiva" && tok.kind !== "alternativa") continue;
     const key = tok.key || "";
     const value = (tok.value || "").trim();
     if (key === "pergunta" || /^dados\d*$/i.test(key)) {
@@ -302,7 +304,8 @@ function parseKuaaFormText(raw: string, fallbackId: string): ExamRecord {
   if (currentP) perguntas.push(currentP);
   if (!perguntas.length) throw new Error("Nenhuma pergunta reconhecida no texto kuaa/.");
   // Converte para ExamRecord com campos minSelect/maxSelect
-  const base = kuaaToExamRecord({ format: "kuaa/", tipo: "formulario", id: top.id || fallbackId, titulo: top.titulo, anonimato: top.anonimato === "permitido" || top.anonimato === "true", perguntas });
+  const boolPt = (v: string | undefined) => v === "sim" || v === "true";
+  const base = kuaaToExamRecord({ format: "kuaa/", tipo: "formulario", id: top.id || fallbackId, titulo: top.titulo, anonimato: top.anonimato === "permitido" || top.anonimato === "true", aleatorio: boolPt(top.aleatorio), perguntas });
   // Ajusta minSelect/maxSelect
   base.questions.forEach((q) => {
     const meta = metaByPergunta[q.originalNumber || ""];
@@ -335,6 +338,7 @@ function parseKuaaJson(raw: Record<string, unknown>, fallbackId: string): ExamRe
     titulo: raw.titulo ? String(raw.titulo) : undefined,
     tematica: raw.tematica ? String(raw.tematica) : undefined,
     anonimato: typeof raw.anonimato === "boolean" ? raw.anonimato : undefined,
+    aleatorio: raw.aleatorio === true,
   };
   if (tipo === "prova" && Array.isArray(raw.questoes)) {
     pkg.questoes = (raw.questoes as Record<string, unknown>[]).map((q) => parseKuaaQuestion(q));
@@ -455,6 +459,7 @@ function kuaaToExamRecord(pkg: KuaaPackage): ExamRecord {
       kind: "quiz",
       quizFinais: finais,
       quizDesempate: 1,
+      aleatorio: pkg.aleatorio,
     };
   }
   // formulario
@@ -494,6 +499,7 @@ function kuaaToExamRecord(pkg: KuaaPackage): ExamRecord {
     updatedAt: new Date().toISOString(),
     kind: "formulario",
     formAnonimo: pkg.anonimato,
+    aleatorio: pkg.aleatorio,
   };
 }
 
@@ -519,6 +525,7 @@ export function serializeKuaaJson(exam: ExamRecord): KuaaPackage {
       id: exam.id,
       titulo: exam.title,
       tematica: exam.booklet || "Diversos",
+      aleatorio: exam.aleatorio,
       finais: (exam.quizFinais || []).map((f) => ({ id: f.id, titulo: f.titulo, texto: f.texto })),
       perguntas: exam.questions.map((q, idx) => ({
         id: q.originalNumber || `P${String(idx + 1).padStart(2, "0")}`,
@@ -538,6 +545,7 @@ export function serializeKuaaJson(exam: ExamRecord): KuaaPackage {
       id: exam.id,
       titulo: exam.title,
       anonimato: exam.formAnonimo ?? true,
+      aleatorio: exam.aleatorio,
       perguntas: exam.questions.map((q, idx) => ({
         id: q.originalNumber || `dados${String(idx + 1).padStart(2, "0")}`,
         enunciado: q.text,
@@ -621,6 +629,7 @@ export function serializeKuaaText(exam: ExamRecord): string {
     lines.push(`id: ${pkg.id}`);
     lines.push(`titulo: ${pkg.titulo || ""}`);
     if (pkg.tematica) lines.push(`tematica: ${pkg.tematica}`);
+    if (pkg.aleatorio) lines.push(`aleatorio: sim`);
     lines.push("");
     lines.push("///");
     lines.push("// FINAIS");
@@ -645,6 +654,7 @@ export function serializeKuaaText(exam: ExamRecord): string {
     lines.push(`id: ${pkg.id}`);
     lines.push(`titulo: ${pkg.titulo || ""}`);
     lines.push(`anonimato: ${pkg.anonimato ? "permitido" : "negado"}`);
+    if (pkg.aleatorio) lines.push(`aleatorio: sim`);
     for (const p of pkg.perguntas || []) {
       lines.push("");
       lines.push("///");
