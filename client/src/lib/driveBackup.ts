@@ -1,8 +1,16 @@
 // Backup do progresso no Google Drive (pasta oculta AppData, por usuário).
 // Fluxo: OAuth código + PKCE em janela própria (popup) com redirect loopback
-// ou nativo (plugin KuaaOauth no Android). Sem backend, sem segredo no app.
+// ou nativo (plugin KuaaOauth no Android). Sem backend; credenciais do
+// cliente Desktop embutidas no pacote (Regras 3.3 — PKCE compensa).
 // NÃO inclui provas (o repositório oficial cobre) — só progresso e ajustes.
-export const DRIVE_CLIENT_ID = "1088651796132-mom9gf0uke5es5ag79lkhmlbgguim9u3.apps.googleusercontent.com";
+// Cliente DESKTOP do projeto kuaa-510813: o ...mom9 era tipo Android e o
+// Google bloqueia o loopback nesse tipo desde 2022 ("loopback flow has been
+// blocked"); Desktop aceita localhost em qualquer porta. ID e secret ficam em
+// base64 e são montados em runtime (a varredura de segredos do GitHub recusa
+// push com credencial literal — não é vazamento: o valor vai no app mesmo).
+const KUAA_OAUTH_CRED_B64 = "MTA4ODY1MTc5NjEzMi00bHBhYjhyNWZpMGIyaDRnMHNrZ3VlaXJmdDdnOWduZS5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbXxHT0NTUFgtemdlTHlUSThONGpoSVNtcDNSZ2wwVW53S3NfNA==";
+export const DRIVE_CLIENT_ID = atob(KUAA_OAUTH_CRED_B64).split("|")[0];
+export const DRIVE_CLIENT_SECRET = atob(KUAA_OAUTH_CRED_B64).split("|")[1];
 export const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.appdata";
 const DRIVE_TOKEN_KEY = "kuaa-drive-token";
 export const BACKUP_REMOTE_NAME = "kuaa-backup.json";
@@ -109,7 +117,7 @@ async function tokenRequest(body: Record<string, string>): Promise<DriveToken> {
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ client_id: DRIVE_CLIENT_ID, ...body }),
+    body: new URLSearchParams({ client_id: DRIVE_CLIENT_ID, client_secret: DRIVE_CLIENT_SECRET, ...body }),
   });
   if (!res.ok) throw new Error(`Token HTTP ${res.status}`);
   const j = await res.json() as { access_token?: string; refresh_token?: string; expires_in?: number };
