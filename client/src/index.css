@@ -99,6 +99,12 @@
   .heading-aside small { color: #75848a; font-size: 11px; }
   .eyebrow { display: flex; align-items: center; gap: 8px; color: #38546a; }
   .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: #b9e34d; box-shadow: 0 0 0 4px rgba(185, 227, 77, 0.22); }
+  /* Bolinha da tela inicial = estado da sincronia com o Google Drive */
+  .pulse-dot.drive-verde { background: #b9e34d; box-shadow: 0 0 0 4px rgba(185, 227, 77, 0.22); }
+  .pulse-dot.drive-azul { background: #4ea1ff; box-shadow: 0 0 0 4px rgba(78, 161, 255, 0.25); animation: drive-dot-pulse 1.4s ease-in-out infinite; }
+  .pulse-dot.drive-amarelo { background: #e8c23a; box-shadow: 0 0 0 4px rgba(232, 194, 58, 0.26); }
+  .pulse-dot.drive-vermelho { background: #ff5a4d; box-shadow: 0 0 0 4px rgba(255, 90, 77, 0.28); animation: drive-dot-pulse 1.1s ease-in-out infinite; }
+  @keyframes drive-dot-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
   .admin-grid-top { display: grid; grid-template-columns: minmax(330px, 1.18fr) minmax(250px, .8fr) minmax(280px, .9fr); gap: 16px; margin-top: 24px; }
   .paper-card { position: relative; border: 1px solid #9eb0b2; background: #fffdf7; box-shadow: 4px 4px 0 rgba(23, 50, 77, 0.075); border-radius: 2px; overflow: hidden; }
   .paper-card::after { content: ""; position: absolute; right: 12px; top: 0; width: 24px; height: 3px; background: #b9e34d; }

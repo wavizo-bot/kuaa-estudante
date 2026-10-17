@@ -86,6 +86,54 @@ export function clearDriveToken() {
   try { window.localStorage.removeItem(DRIVE_TOKEN_KEY); } catch { /* ignora */ }
 }
 
+// ---- Estado da sincronia (bolinha da tela inicial) ----
+// A impressão digital (hash) do payload atual comparada com a do último
+// backup que chegou ao Drive diz se "está tudo salvo" — é o que alimenta o
+// ponto verde/azul/amarelo/vermelho.
+const DRIVE_SYNC_FP_KEY = "kuaa-drive-synced-fp";
+
+export function payloadFingerprint(payload: BackupPayload): string {
+  const s = JSON.stringify(payload.data);
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return `${s.length}:${h.toString(16)}`;
+}
+
+export async function backupFingerprint(idb: IdbIO): Promise<string> {
+  return payloadFingerprint(await buildBackupPayload(idb));
+}
+
+export function readSyncedFingerprint(): string | null {
+  try { return window.localStorage.getItem(DRIVE_SYNC_FP_KEY); } catch { return null; }
+}
+
+export function saveSyncedFingerprint(fp: string) {
+  try { window.localStorage.setItem(DRIVE_SYNC_FP_KEY, fp); } catch { /* ignora */ }
+}
+
+/** Desconecta do Drive e esquece a última sincronia (trocar de conta). */
+export function clearDriveSession() {
+  clearDriveToken();
+  try { window.localStorage.removeItem(DRIVE_SYNC_FP_KEY); } catch { /* ignora */ }
+}
+
+/**
+ * Revoga a permissão no servidor do Google. Sem isso, o consentimento volta a
+ * liberar em silêncio a mesma conta e o usuário não consegue trocar de conta.
+ * Best-effort: falha aqui não impede a saída (o signOut do Play Services já
+ * sai da conta no aparelho).
+ */
+export async function revokeDriveAccess(token: string | undefined): Promise<void> {
+  if (!token) return;
+  try {
+    await fetch("https://oauth2.googleapis.com/revoke", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `token=${encodeURIComponent(token)}&client_id=${encodeURIComponent(DRIVE_CLIENT_ID)}`,
+    });
+  } catch { /* revogação é best-effort */ }
+}
+
 function b64url(bytes: ArrayBuffer): string {
   const u = new Uint8Array(bytes);
   let bin = "";
@@ -208,6 +256,7 @@ export async function downloadBackup(token: string): Promise<BackupPayload> {
 
 type NativeOAuthPlugin = {
   driveToken?: () => Promise<{ token?: string; error?: string }>;
+  signOut?: () => Promise<void>;
 };
 function nativePlugin(): NativeOAuthPlugin | null {
   try {
@@ -227,6 +276,17 @@ export async function nativeDriveToken(): Promise<string> {
   const r = await plugin.driveToken();
   if (r.error || !r.token) throw new Error(r.error || "Google não autorizou.");
   return r.token;
+}
+
+/**
+ * Sai da conta Google no Play Services (Android): sem isso, o próximo
+ * consentimento nativo reusa a conta silenciosamente e o usuário não
+ * consegue trocar de conta.
+ */
+export async function nativeSignOut(): Promise<boolean> {
+  const plugin = nativePlugin();
+  if (!plugin?.signOut) return false;
+  try { await plugin.signOut(); return true; } catch { return false; }
 }
 
 export function waitPopupCode(popup: Window, timeoutMs = 120000): Promise<string> {

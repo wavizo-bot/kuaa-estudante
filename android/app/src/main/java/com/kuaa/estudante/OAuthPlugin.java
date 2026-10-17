@@ -56,6 +56,20 @@ public class OAuthPlugin extends Plugin {
         });
     }
 
+    /**
+     * Sai da conta no Play Services (a API nova 21.x usa Identity.getSignInClient;
+     * o antigo Identity.getGoogleSignInClient foi removido). Sem isso, o próximo
+     * consentimento nativo reusa a conta automaticamente.
+     */
+    @PluginMethod
+    public void signOut(PluginCall call) {
+        getActivity().runOnUiThread(() -> {
+            Identity.getSignInClient(getActivity()).signOut()
+                .addOnSuccessListener(v -> call.resolve())
+                .addOnFailureListener(e -> call.reject("sair falhou: " + e.getMessage()));
+        });
+    }
+
     private void deliverDriveToken(AuthorizationResult result) {
         PluginCall c = driveCall; driveCall = null;
         if (c == null) return;
