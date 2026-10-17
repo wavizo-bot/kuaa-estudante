@@ -57,6 +57,10 @@ dependencies {
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    // Login Google nativo (Play Services) para token do Drive — sem WebView:
+    // o Google recusa OAuth em WebView ("esse navegador ou app pode não ser
+    // seguro"). Mesmo fluxo do guia de migração de loopback dele.
+    implementation "com.google.android.gms:play-services-auth:21.3.0"
     implementation project(':capacitor-cordova-android-plugins')
 }
 

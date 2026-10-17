@@ -135,6 +135,18 @@ export const exchangeCode = (code: string, verifier: string, redirectUri: string
   tokenRequest({ grant_type: "authorization_code", code, redirect_uri: redirectUri, code_verifier: verifier });
 
 export async function validToken(): Promise<DriveToken | null> {
+  // Android: o token vem do Play Services (consentimento nativo, sem WebView).
+  // A primeira chamada mostra o diálogo do Google; as seguintes são silenciosas.
+  if (hasNativeDriveAuth()) {
+    const cached = readDriveToken();
+    if (cached && cached.expires_at - Date.now() > 60000) return cached;
+    try {
+      const token = await nativeDriveToken();
+      const nativo: DriveToken = { access_token: token, refresh_token: "nativo", expires_at: Date.now() + 3300000 };
+      try { window.localStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify(nativo)); } catch { /* ignora */ }
+      return nativo;
+    } catch { return null; }
+  }
   const t = readDriveToken();
   if (!t) return null;
   if (t.expires_at - Date.now() > 60000) return t;
@@ -195,23 +207,26 @@ export async function downloadBackup(token: string): Promise<BackupPayload> {
 // ---- Ponte nativa (Android) e popup (web/MSIX) ----
 
 type NativeOAuthPlugin = {
-  startOAuth?: (opts: { url: string; redirectPrefix: string }) => Promise<{ code?: string; error?: string }>;
+  driveToken?: () => Promise<{ token?: string; error?: string }>;
 };
 function nativePlugin(): NativeOAuthPlugin | null {
   try {
     const p = (window as unknown as { Capacitor?: { Plugins?: { KuaaOauth?: NativeOAuthPlugin } } }).Capacitor?.Plugins?.KuaaOauth;
-    return p && typeof p.startOAuth === "function" ? p : null;
+    return p && typeof p.driveToken === "function" ? p : null;
   } catch { return null; }
 }
-export const hasNativeOAuth = (): boolean => nativePlugin() !== null;
-export const NATIVE_OAUTH_REDIRECT = "http://localhost:8765/oauth/callback";
 
-export async function nativeOAuthCode(authUrl: string): Promise<string> {
+// Login nativo (Play Services): o Google recusa OAuth dentro de WebView —
+// "Esse navegador ou app pode não ser seguro". No Android o token do Drive
+// sai do plugin KuaaOauth.driveToken (consentimento nativo do Google); no
+// web/MSIX continua o popup num navegador de verdade.
+export const hasNativeDriveAuth = (): boolean => nativePlugin() !== null;
+export async function nativeDriveToken(): Promise<string> {
   const plugin = nativePlugin();
-  if (!plugin?.startOAuth) throw new Error("Login nativo indisponível.");
-  const r = await plugin.startOAuth({ url: authUrl, redirectPrefix: NATIVE_OAUTH_REDIRECT });
-  if (r.error || !r.code) throw new Error(r.error === "cancelado" ? "Login cancelado." : "Google não autorizou.");
-  return r.code;
+  if (!plugin?.driveToken) throw new Error("Login nativo indisponível.");
+  const r = await plugin.driveToken();
+  if (r.error || !r.token) throw new Error(r.error || "Google não autorizou.");
+  return r.token;
 }
 
 export function waitPopupCode(popup: Window, timeoutMs = 120000): Promise<string> {

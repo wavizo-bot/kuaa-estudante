@@ -84,7 +84,7 @@ import { inferExamRole, isUnresolvedRole } from "@/lib/examMetadata";
 import { type ActivationGrant, createActivationCode, createActivationGrant, fetchOnlineUtcTime, isActivationGrantValid, isStudentActivationRequired, monthsForActivationPassword, normalizeActivationValue, STUDENT_ACTIVATION_STORAGE_KEY } from "@/lib/activation";
 import { calcularPontuacaoAdaptativa, calcularPontuacaoRitmoPressao, pesoBase, type QuestaoRespondida, type RitmoPressaoModo } from "@/lib/triAdaptativa";
 import { loadPerformanceHistory, savePerformanceRecord, clearPerformanceHistory, lastNProvas, countProvasByMonth, bestAndWorstSubjects, lastQuizResults, type PerformanceRecord } from "@/lib/performanceHistory";
-import { applyBackupPayload, buildBackupPayload, clearDriveToken, downloadBackup, exchangeCode, googleAuthUrl, hasNativeOAuth, nativeOAuthCode, NATIVE_OAUTH_REDIRECT, pkcePair, uploadBackup, validToken, waitPopupCode } from "@/lib/driveBackup";
+import { applyBackupPayload, buildBackupPayload, clearDriveToken, downloadBackup, exchangeCode, googleAuthUrl, hasNativeDriveAuth, pkcePair, uploadBackup, validToken, waitPopupCode } from "@/lib/driveBackup";
 import { APP_VERSION } from "@/version";
 
 type View = "admin" | "student";
@@ -1136,21 +1136,21 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
     setDriveBusy(true);
     setDriveMsg("Abrindo o login do Google…");
     try {
-      const { verifier, challenge } = await pkcePair();
-      let code: string;
-      let redirectUri: string;
-      if (hasNativeOAuth()) {
-        redirectUri = NATIVE_OAUTH_REDIRECT;
-        code = await nativeOAuthCode(googleAuthUrl(redirectUri, challenge));
+      if (hasNativeDriveAuth()) {
+        // Android: consentimento nativo do Google Play Services (sem WebView —
+        // o Google recusa OAuth em WebView). O token fica guardado em validToken.
+        const t = await validToken();
+        if (!t) throw new Error("Google não autorizou.");
       } else {
-        redirectUri = `${window.location.origin.replace("127.0.0.1", "localhost")}/oauth-callback.html`;
+        const { verifier, challenge } = await pkcePair();
+        const redirectUri = `${window.location.origin.replace("127.0.0.1", "localhost")}/oauth-callback.html`;
         try { window.localStorage.removeItem("kuaa-oauth-code"); } catch { /* ignora */ }
         const popup = window.open(googleAuthUrl(redirectUri, challenge), "kuaa-google-login", "width=520,height=700");
         if (!popup) throw new Error("O navegador bloqueou a janela. Permita popups e tente de novo.");
-        code = await waitPopupCode(popup);
+        const code = await waitPopupCode(popup);
+        await exchangeCode(code, verifier, redirectUri);
+        try { window.localStorage.removeItem("kuaa-oauth-code"); } catch { /* ignora */ }
       }
-      await exchangeCode(code, verifier, redirectUri);
-      try { window.localStorage.removeItem("kuaa-oauth-code"); } catch { /* ignora */ }
       setDriveConnected(true);
       setDriveMsg("Conectado. Faça o backup quando quiser.");
       toast.success("Google conectado", { description: "Seu progresso pode ser guardado no Drive." });
