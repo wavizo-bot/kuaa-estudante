@@ -75,6 +75,81 @@ export async function applyBackupPayload(payload: BackupPayload, idb: IdbIO): Pr
   return { restored };
 }
 
+// ---- Desempate: nada se substitui, tudo é somado ----
+// Dois aparelhos usam sem internet e, ao se conectarem, o progresso dos dois
+// é unido: listas viram união por id (tentativas, eventos rápidos, respostas
+// de formulário), objetos ganham as chaves que faltam e escalares (ajustes)
+// ficam com o valor do aparelho. Só o que existe só na nuvem é trazido; nada
+// local é descartado.
+function ehRegistro(v: unknown): v is Record<string, unknown> {
+  return Boolean(v) && typeof v === "object" && !Array.isArray(v);
+}
+function chaveItem(v: unknown): string {
+  if (ehRegistro(v) && v.id !== undefined) return String(v.id);
+  return JSON.stringify(v);
+}
+function campoData(lista: unknown[]): string | null {
+  for (const campo of ["completedAt", "answeredAt"]) {
+    const primeiro = lista.find(ehRegistro);
+    if (primeiro && primeiro[campo] !== undefined) return campo;
+  }
+  return null;
+}
+function mesclarListas(a: unknown[], b: unknown[]): unknown[] {
+  const saida = [...a];
+  const vistas = new Set(a.map(chaveItem));
+  for (const item of b) {
+    const chave = chaveItem(item);
+    if (!vistas.has(chave)) { vistas.add(chave); saida.push(item); }
+  }
+  const campo = campoData(saida);
+  if (campo) saida.sort((x, y) => String(ehRegistro(x) ? x[campo] ?? "" : "").localeCompare(String(ehRegistro(y) ? y[campo] ?? "" : "")));
+  return saida;
+}
+function mesclarValor(a: unknown, b: unknown): unknown {
+  if (a === undefined || a === null) return b;
+  if (b === undefined || b === null) return a;
+  if (Array.isArray(a) && Array.isArray(b)) return mesclarListas(a, b);
+  if (ehRegistro(a) && ehRegistro(b)) {
+    const saida: Record<string, unknown> = { ...b };
+    for (const [k, v] of Object.entries(a)) saida[k] = mesclarValor(v, b[k]);
+    return saida;
+  }
+  // Números aqui são progresso (recordes, conquistas, contadores): fica o
+  // maior dos dois — nada se perde por ter sido feito no outro aparelho.
+  if (typeof a === "number" && typeof b === "number") return Math.max(a, b);
+  return a; // texto/booleano e misturas: vale o do aparelho (preferências)
+}
+function tentarJson(v: unknown): { ok: boolean; valor?: unknown } {
+  if (typeof v !== "string") return { ok: false };
+  try { return { ok: true, valor: JSON.parse(v) }; } catch { return { ok: false }; }
+}
+/** Une o backup local com o da nuvem sem perder nada de nenhum dos lados. */
+export function mergePayloads(local: BackupPayload, remote: BackupPayload): BackupPayload {
+  const data: Record<string, unknown> = {};
+  const chaves: Record<string, true> = {};
+  for (const k of Object.keys(local?.data ?? {})) chaves[k] = true;
+  for (const k of Object.keys(remote?.data ?? {})) chaves[k] = true;
+  for (const k of Object.keys(chaves)) {
+    const a = local?.data?.[k];
+    const b = remote?.data?.[k];
+    // As chaves do localStorage são strings; quando guardam JSON (conquistas,
+    // respostas de formulário, sequências) o conteúdo é unido como
+    // lista/objeto; texto puro (tema, velocidade…) fica com o do aparelho.
+    if (k.startsWith("ls:")) {
+      const ja = tentarJson(a);
+      const jb = tentarJson(b);
+      if (ja.ok || jb.ok) {
+        const unido = mesclarValor(a === undefined ? undefined : ja.valor, b === undefined ? undefined : jb.valor);
+        data[k] = JSON.stringify(unido === undefined ? null : unido);
+        continue;
+      }
+    }
+    data[k] = mesclarValor(a, b);
+  }
+  return { v: BACKUP_VERSION, at: new Date().toISOString(), data };
+}
+
 export function readDriveToken(): DriveToken | null {  try {
     const raw = window.localStorage.getItem(DRIVE_TOKEN_KEY);
     if (!raw) return null;
@@ -201,7 +276,12 @@ export async function validToken(): Promise<DriveToken | null> {
   if (!t.refresh_token) { clearDriveToken(); return null; }
   try {
     return await tokenRequest({ grant_type: "refresh_token", refresh_token: t.refresh_token });
-  } catch { clearDriveToken(); return null; }
+  } catch (err) {
+    // Rede caída não é revogação: só limpa o token quando o Google mesmo
+    // recusou (HTTP 4xx); numa falha de internet o token fica guardado.
+    if (err instanceof Error && err.message.startsWith("Token HTTP 4")) clearDriveToken();
+    return null;
+  }
 }
 
 async function driveFetch(path: string, token: string, init?: RequestInit) {
@@ -270,10 +350,24 @@ function nativePlugin(): NativeOAuthPlugin | null {
 // sai do plugin KuaaOauth.driveToken (consentimento nativo do Google); no
 // web/MSIX continua o popup num navegador de verdade.
 export const hasNativeDriveAuth = (): boolean => nativePlugin() !== null;
+
+// O Play Services às vezes engasga (ex.: logo depois de um signOut) e a
+// Promise do plugin nunca assenta — o botão ficava "mudo" até reiniciar o
+// app. Com prazo, o erro sobe e o clique pode ser tentado de novo.
+function comPrazo<T>(p: Promise<T>, ms: number, msg: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(msg)), ms);
+    p.then(
+      (v) => { window.clearTimeout(timer); resolve(v); },
+      (e) => { window.clearTimeout(timer); reject(e); },
+    );
+  });
+}
+
 export async function nativeDriveToken(): Promise<string> {
   const plugin = nativePlugin();
   if (!plugin?.driveToken) throw new Error("Login nativo indisponível.");
-  const r = await plugin.driveToken();
+  const r = await comPrazo(plugin.driveToken(), 15000, "O Google não respondeu. Tente de novo.");
   if (r.error || !r.token) throw new Error(r.error || "Google não autorizou.");
   return r.token;
 }
@@ -286,7 +380,30 @@ export async function nativeDriveToken(): Promise<string> {
 export async function nativeSignOut(): Promise<boolean> {
   const plugin = nativePlugin();
   if (!plugin?.signOut) return false;
-  try { await plugin.signOut(); return true; } catch { return false; }
+  try { await comPrazo(plugin.signOut(), 5000, "signOut lento"); return true; } catch { return false; }
+}
+
+/**
+ * Login nativo de um toque: usa o token guardado se ainda vale; senão abre o
+ * consentimento do Play Services. O Play Services às vezes engasga na 1ª
+ * chamada logo depois de um signOut (o botão ficava mudo até reiniciar o
+ * app) — espera um pouco e tenta de novo antes de desistir.
+ */
+export async function nativeLogin(): Promise<DriveToken> {
+  const cached = readDriveToken();
+  if (cached && cached.expires_at - Date.now() > 60000) return cached;
+  let token: string;
+  try {
+    token = await nativeDriveToken();
+  } catch (err) {
+    // "não autorizou" = o usuário cancelou ou o Google recusou: não insiste.
+    if (err instanceof Error && err.message.includes("autorizou")) throw err;
+    await new Promise((r) => window.setTimeout(r, 1500));
+    token = await nativeDriveToken();
+  }
+  const nativo: DriveToken = { access_token: token, refresh_token: "nativo", expires_at: Date.now() + 3300000 };
+  try { window.localStorage.setItem(DRIVE_TOKEN_KEY, JSON.stringify(nativo)); } catch { /* ignora */ }
+  return nativo;
 }
 
 export function waitPopupCode(popup: Window, timeoutMs = 120000): Promise<string> {
