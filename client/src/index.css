@@ -185,6 +185,28 @@
   .quick-count-card span { color: var(--student-muted, #5f7379); font-size: 8px; font-weight: 800; letter-spacing: .14em; }
   .quick-count-card strong { font-family: "Fraunces", serif; font-size: 42px; line-height: .9; letter-spacing: -.07em; }
   .quick-count-card small { color: var(--student-muted, #5f7379); font-size: 10px; font-weight: 700; }
+  /* Calendário de atividade (etapa 47): 4 quadrados sob "questões disponíveis".
+     O lado vem de SQUARE_SIZE_SOURCE (ActivityCalendar.tsx) = 38px, o mesmo
+     quadrado do .library-nav-btn; no mobile os nav-btns viram 34 → espelha. */
+  .kuaa-atividade { --kuaa-gap: 6px; display: flex; gap: var(--kuaa-gap); justify-content: flex-end; margin-top: 9px; }
+  .kuaa-atividade-celula { box-sizing: border-box; width: var(--kuaa-square, 38px); height: var(--kuaa-square, 38px); display: grid; place-items: center; padding: 0; border: 1px solid var(--student-line, #cbd7d5); border-radius: 6px; font-family: var(--student-body, "DM Sans"), sans-serif; font-size: 11px; font-weight: 800; line-height: 1; overflow: hidden; }
+  button.kuaa-atividade-celula { cursor: pointer; transition: transform 140ms var(--ease-out), box-shadow 140ms var(--ease-out); }
+  button.kuaa-atividade-celula:hover { transform: translateY(-2px); box-shadow: 0 2px 5px rgba(23, 50, 77, .18); }
+  .kuaa-atividade-celula.hoje { border: 2px solid var(--student-accent, #b9e34d); }
+  .kuaa-atividade-overlay { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 16px; background: rgba(23, 50, 77, .5); }
+  .kuaa-atividade-modal { display: grid; gap: 12px; width: min(560px, 100%); max-height: 92vh; overflow: auto; padding: 14px; border: 1px solid var(--student-line, #cbd7d5); background: var(--student-surface, #fffdf7); color: var(--student-ink, #17324d); box-shadow: 6px 6px 0 rgba(23, 50, 77, .18); }
+  .kuaa-atividade-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .kuaa-atividade-head button { min-height: 34px; padding: 6px 12px; border: 1px solid var(--student-line, #cbd7d5); background: var(--student-surface, #fffdf7); color: var(--student-ink, #17324d); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; border-radius: 6px; }
+  .kuaa-atividade-head button:hover { background: var(--student-soft, #f1f5ef); }
+  .kuaa-atividade-grade { display: grid; gap: var(--kuaa-gap); }
+  .kuaa-atividade-grade.vertical { grid-template-columns: repeat(7, var(--kuaa-square, 38px)); justify-content: center; }
+  .kuaa-atividade-grade.horizontal { grid-auto-flow: column; grid-template-rows: repeat(7, var(--kuaa-square, 38px)); grid-auto-columns: var(--kuaa-square, 38px); width: 100%; overflow-x: auto; touch-action: pan-x; cursor: grab; padding-bottom: 4px; }
+  .kuaa-atividade-grade.horizontal:active { cursor: grabbing; }
+  .kuaa-atividade-grade.horizontal.com-desvanecer { mask-image: linear-gradient(to right, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%); -webkit-mask-image: linear-gradient(to right, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%); }
+  .kuaa-atividade-modal.expandido .kuaa-atividade-celula { width: calc(var(--kuaa-square, 38px) + 16px); }
+  .kuaa-atividade-modal.expandido .kuaa-atividade-grade.vertical { grid-template-columns: repeat(7, calc(var(--kuaa-square, 38px) + 16px)); }
+  .kuaa-atividade-modal.expandido .kuaa-atividade-grade.horizontal { grid-auto-columns: calc(var(--kuaa-square, 38px) + 16px); }
+  .kuaa-atividade-rodape { margin: 0; color: var(--student-muted, #5f7379); font-size: 10px; text-align: center; }
   .student-hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); min-height: 310px; border-bottom: 1px solid #cbd7d5; }
   .student-hero-copy { padding: 54px 42px 45px 0; align-content: center; }
   .student-hero-copy > p:not(.eyebrow) { max-width: 610px; margin-top: 17px; color: #5c6f74; font-size: 15px; line-height: 1.6; }
@@ -672,7 +694,9 @@ html[data-student-theme="noite"] .student-session .exam-paper { border-color:var
   .admin-acervo-card .admin-exam-row { grid-template-columns:auto minmax(0,1fr) auto auto auto auto; }.admin-acervo-card .admin-exam-row .icon-action { min-width:34px; padding-inline:8px; }.danger-button { border-color:#d9aca2 !important; color:#993f33 !important; }.danger-button:hover { background:#f8e5df !important; }.admin-empty { padding:33px 18px; color:#667a7e; font-size:12px; text-align:center; }
   .collection-pagination { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:10px 0; padding:9px 10px; border:1px solid #b6c7c3; background:#f6f8f2; color:#52686e; }.collection-pagination > span { color:#5e7176; font-size:10px; font-weight:800; text-align:center; }.collection-pagination .button { min-height:32px; padding:6px 9px; font-size:10px; }.student-pagination { margin:0 0 10px; border-color:var(--student-line); background:var(--student-surface); color:var(--student-ink); }.student-pagination > span { color:var(--student-muted); }.student-pagination .button { border-color:var(--student-line); color:var(--student-ink); }
 .library-kind-filters { display:flex; gap:8px; justify-content:center; }
-.library-kind-filters button { width:34px; height:34px; border:1px solid var(--student-line,#b6c7c3); background:var(--student-surface,#f6f8f2); font-size:16px; line-height:1; cursor:pointer; border-radius:6px; }
+/* Padronizado no tamanho dos .library-nav-btn (38×38) — antes era 34×34 */
+.library-kind-filters button { width:38px; height:38px; border:1px solid var(--student-line,#b6c7c3); background:var(--student-surface,#fffdf7); color:var(--student-ink,#17324d); font-size:18px; line-height:1; cursor:pointer; border-radius:6px; padding:0; transition:background 160ms var(--ease-out), border-color 160ms var(--ease-out); }
+.library-kind-filters button:hover:not(.is-active) { border-color:var(--student-ink,#17324d); background:var(--student-soft,#f1f5ef); }
 .library-kind-filters button.is-active { background:var(--student-accent,#b9e34d); border-color:var(--student-accent,#b9e34d); }
   .quick-origin { display:flex; align-items:stretch; justify-content:space-between; gap:14px; margin:-6px 0 18px; border:1px solid var(--student-line); border-left:4px solid var(--student-accent); background:color-mix(in srgb,var(--student-soft) 64%,var(--student-surface)); }.quick-origin > div { display:grid; gap:3px; min-width:0; padding:10px 12px; }.quick-origin span { color:var(--student-muted); font-size:8px; font-weight:800; letter-spacing:.13em; }.quick-origin strong { overflow:hidden; color:var(--student-ink); font-size:11px; line-height:1.35; text-overflow:ellipsis; white-space:nowrap; }.quick-origin b { display:grid; place-items:center; flex:0 0 auto; min-width:90px; border-left:1px solid var(--student-line); background:var(--student-surface); color:var(--student-ink); padding:9px; font-family:"Fraunces",serif; font-size:14px; text-align:center; }.quick-inline-result { margin-left:auto; padding:5px 8px; font-size:10px; font-weight:800; }.quick-inline-result.is-correct { background:#e4f1bf; color:#31572c; }.quick-inline-result.is-wrong { background:#f6e1db; color:#993f33; }
   .subject-time-card ol { display:grid; gap:7px; margin:11px 0 0; padding:0; list-style:none; }.subject-time-card li { display:flex; justify-content:space-between; gap:8px; border-top:1px solid color-mix(in srgb,var(--student-line) 60%,transparent); padding-top:7px; color:var(--student-muted); font-size:10px; }.subject-time-card li span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.subject-time-card li strong { flex:0 0 auto; color:var(--student-ink); font-size:10px; }.attempt-average-note { margin-top:7px; color:var(--student-muted); font-size:11px; }.attempt-average-note strong { color:var(--student-ink); font-family:"Fraunces",serif; font-size:18px; letter-spacing:-.04em; }.exam-score.has-best-score strong { color:var(--student-ink); font-size:30px; line-height:.95; }
@@ -1019,6 +1043,9 @@ html[data-student-theme="noite"] .student-session .exam-paper { border-color:var
   .exam-footer.quick-nav-footer { flex-wrap: nowrap !important; }
   /* Botões da busca compactos */
   .library-nav-btn { width: 34px; height: 34px; font-size: 16px; }
+  .library-kind-filters button { width: 34px; height: 34px; font-size: 16px; }
+  /* Calendário de atividade acompanha os nav-btns no mobile (34px) */
+  .kuaa-atividade, .kuaa-atividade-overlay { --kuaa-square: 34px !important; }
   /* Medalhas inline: ícones um pouco menores no mobile */
   .medal-strip-inline .achievement-medal img { width: 32px; height: 32px; }
   /* Medal grid: 4 colunas continua, mas com medalhas menores */
