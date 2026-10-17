@@ -66,3 +66,59 @@ Sim. Após a instalação, todo o conteúdo funciona offline.
 Dúvidas sobre o app ou privacidade: mmr05@hotmail.com
 
 Estude no seu ritmo, sem distrações. Baixe o kuaa Estudante.
+
+------------------------------------------------------------------------
+ENGLISH TRANSLATION (para cadastro em "Translations" no Play Console)
+Motivo: o Google recusa listagem quando a tradução é cópia idêntica do
+texto principal ("Translated short and long description are the same").
+Cole este texto SOMENTE num idioma diferente do principal — e nunca repita
+o mesmo texto em dois campos.
+------------------------------------------------------------------------
+
+[SHORT DESCRIPTION EN — 61 chars]
+Study offline with everything in one lightweight app. No ads.
+
+[LONG DESCRIPTION EN]
+kuaa Estudante — all your study material in one lightweight, offline, ad-free app.
+
+kuaa Estudante brings your study content right to your phone. The content is built into the app itself: no internet required, no sign-up, and no ads interrupting your focus. It is ideal for studying anywhere — on your commute, at the library, in line — even where there is no signal.
+
+WHY CHOOSE KUAA ESTUDANTE
+
+• Works 100% offline
+All content is installed together with the app. After the first launch, you can study with or without internet, without using your mobile data.
+
+• Zero ads
+No Google Ads, banners, videos or pop-ups. No interruptions — just studying.
+
+• Real privacy
+The app does not collect, send or store any of your data. There is no login, sign-up, cookies, analytics or trackers. kuaa Estudante does not access the camera, microphone, location, contacts or any other data on your device. Communication is one-way: content goes from the app to you and nothing is transmitted to us.
+
+• Light and fast
+Small install size, instant launch and a clean interface, with content organized in sections so you can find what you need quickly.
+
+• No in-app purchases
+Completely free to use, with no subscriptions or charges.
+
+PERMISSIONS
+
+- Internet: used only to load fonts when a connection is available; all content works offline.
+- Vibrate: subtle haptic feedback from the interface.
+
+FREQUENTLY ASKED QUESTIONS
+
+Do I need to create an account or log in?
+No. The app never asks for your name, e-mail, password or any personal data.
+
+Do you track my study progress?
+No. There is no mechanism by which the app sends your usage or information to us.
+
+Are there ads?
+No, none at all.
+
+Does it work without internet?
+Yes. After installation, all content works offline.
+
+Questions about the app or privacy: mmr05@hotmail.com
+
+Study at your own pace, distraction-free. Download kuaa Estudante.
