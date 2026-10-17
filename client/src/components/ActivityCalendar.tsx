@@ -345,11 +345,11 @@ export function ActivityCalendar({ attempts, quickEvents, formResponses }: Activ
               );
             })}
           </div>
-          <p className="kuaa-atividade-rodape">
-            {calculo.vmr === null
-              ? "Menos de 5 dias com atividade: todos contam como máximo."
-              : `Referência (VMR): ${Math.round(calculo.vmr)} questões/dia · últimos ${JANELA_DIAS} dias`}
-          </p>
+          {calculo.vmr !== null && (
+            <p className="kuaa-atividade-rodape">
+              Referência (VMR): {Math.round(calculo.vmr)} questões/dia · últimos {JANELA_DIAS} dias
+            </p>
+          )}
         </div>
       </div>
     </>
