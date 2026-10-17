@@ -2455,7 +2455,7 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
 
 // ---- Aceite de termos (modal bloqueante, 1a execução / nova versão) ----
 const TERMS_VERSION = "1.0";
-const APP_VERSION_FALLBACK = "1.4.0";
+const APP_VERSION_FALLBACK = "1.5.0";
 const TERMS_ACCEPT_KEY = "kuaa-terms-accept-v1";
 type TermsAccept = { terms: string; app: string; at: string };
 function readTermsAccept(): TermsAccept | null {
