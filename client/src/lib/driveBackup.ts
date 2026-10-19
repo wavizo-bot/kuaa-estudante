@@ -31,7 +31,7 @@ const LS_KEYS = [
   "kuaa-quick-hand-mode", "kuaa-quick-durations",
   "kuaa-form-responses",
   "kuaa-ritmo-modo", "kuaa-ritmo-tempo", "kuaa-ritmo-recordes",
-  "kuaa-performance-history",
+  "kuaa-performance-history", "kuaa-atividade-orientacao",
   "kuaa-terms-accept-v1", "kuaa-repo-imports",
 ];
 
@@ -44,7 +44,14 @@ export async function buildBackupPayload(idb: IdbIO): Promise<BackupPayload> {
   const data: Record<string, unknown> = {};
   for (const k of IDB_KEYS) {
     try {
-      const v = await idb.get(`idb:${k}`);
+      // O app grava com a chave SIMPLES (ex.: "attempts") e a CHAVE do payload
+      // leva o prefixo "idb:" — por isso a leitura tem que ser na chave simples
+      // (bug antigo: lia só `idb:attempts`, que ninguém grava, e NADA do
+      // IndexedDB — tentativas, atividade, estatísticas — ia para a nuvem).
+      // O fallback `idb:` cobre backups antigos que porventura tivessem sido
+      // gravados com o prefixo.
+      let v = await idb.get(k);
+      if (v === undefined) v = await idb.get(`idb:${k}`);
       if (v !== undefined) data[`idb:${k}`] = v;
     } catch { /* ignora chave ilegível */ }
   }

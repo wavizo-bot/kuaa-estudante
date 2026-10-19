@@ -85,7 +85,7 @@ import { inferExamRole, isUnresolvedRole } from "@/lib/examMetadata";
 import { type ActivationGrant, createActivationCode, createActivationGrant, fetchOnlineUtcTime, isActivationGrantValid, isStudentActivationRequired, monthsForActivationPassword, normalizeActivationValue, STUDENT_ACTIVATION_STORAGE_KEY } from "@/lib/activation";
 import { calcularPontuacaoAdaptativa, calcularPontuacaoRitmoPressao, pesoBase, type QuestaoRespondida, type RitmoPressaoModo } from "@/lib/triAdaptativa";
 import { loadPerformanceHistory, savePerformanceRecord, clearPerformanceHistory, lastNProvas, countProvasByMonth, bestAndWorstSubjects, lastQuizResults, type PerformanceRecord } from "@/lib/performanceHistory";
-import { applyBackupPayload, backupFingerprint, buildBackupPayload, clearDriveSession, downloadBackup, exchangeCode, googleAuthUrl, hasNativeDriveAuth, mergePayloads, nativeLogin, nativeSignOut, payloadFingerprint, pkcePair, readDriveToken, readSyncedFingerprint, revokeDriveAccess, saveSyncedFingerprint, uploadBackup, validToken, waitPopupCode } from "@/lib/driveBackup";
+import { type BackupPayload, applyBackupPayload, backupFingerprint, buildBackupPayload, clearDriveSession, downloadBackup, exchangeCode, googleAuthUrl, hasNativeDriveAuth, mergePayloads, nativeLogin, nativeSignOut, payloadFingerprint, pkcePair, readDriveToken, readSyncedFingerprint, revokeDriveAccess, saveSyncedFingerprint, uploadBackup, validToken, waitPopupCode } from "@/lib/driveBackup";
 import { APP_VERSION } from "@/version";
 
 type View = "admin" | "student";
@@ -1228,7 +1228,16 @@ function StudentPreview({ exams, selectedExamId, onChange, onSelected, attempts,
         return;
       }
       const local = await buildBackupPayload({ get: idbGet, set: idbSet });
-      const remoto = await downloadBackup(t.access_token).catch(() => null);
+      // Só "nenhum backup ainda" (primeira vez) conta como remoto inexistente.
+      // Qualquer OUTRA falha de download (rede, permissão) ABORTA a sync:
+      // subir o local vazio por cima apagaria o progresso salvo na nuvem.
+      let remoto: BackupPayload | null = null;
+      try {
+        remoto = await downloadBackup(t.access_token);
+      } catch (err) {
+        const primeiraVez = err instanceof Error && err.message.startsWith("Nenhum backup");
+        if (!primeiraVez) throw err;
+      }
       const mesclado = remoto ? mergePayloads(local, remoto) : local;
       await applyBackupPayload(mesclado, { get: idbGet, set: idbSet });
       await uploadBackup(t.access_token, mesclado);
