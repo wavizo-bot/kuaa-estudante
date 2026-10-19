@@ -18,6 +18,14 @@ import type { ExamRecord } from "@/pages/Home";
 // Tipos locais (espelham os de AdminPreviewNew para evitar cross-import de tipos não exportados).
 type Question = ExamRecord["questions"][number];
 type Difficulty = "facil" | "media" | "dificil";
+/** Nível fino de dificuldade (banco reavaliado na etapa 54): 1 a 5.
+ *  `difficulty` continua sendo a moeda de pontuação/TRI (3 níveis). */
+export type Nivel = 1 | 2 | 3 | 4 | 5;
+export const NIVEL_LABELS: Record<Nivel, string> = { 1: "Muito fácil", 2: "Fácil", 3: "Média", 4: "Difícil", 5: "Muito difícil" };
+export function parseNivel(value: unknown): Nivel | undefined {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 1 && n <= 5 ? (n as Nivel) : undefined;
+}
 type QuestionType = "unica" | "multipla" | "discursiva";
 
 export type KuaaKind = "prova" | "quiz" | "formulario";
@@ -60,6 +68,7 @@ export type KuaaQuestion = {
   pontuacao?: number;
   pontuacao_parcial?: number | null;
   dificuldade?: Difficulty;
+  dificuldade_nivel?: Nivel;
   tempo?: number;
   materia?: string;
   assunto?: string;
@@ -169,6 +178,7 @@ function parseKuaaProvaText(raw: string, fallbackId: string): ExamRecord {
     }
     if (current && key === "numeracao") { current.numeracao = Number(value) || undefined; lastField = null; continue; }
     if (current && key === "dificuldade") { current.dificuldade = parseDifficultyPt(value); lastField = null; continue; }
+    if (current && key === "dificuldade_nivel") { current.dificuldade_nivel = parseNivel(value); lastField = null; continue; }
     if (current && key === "tempo") { current.tempo = Number(value) || undefined; lastField = null; continue; }
     if (current && key === "pontuacao") { current.pontuacao = Number(value) || undefined; lastField = null; continue; }
     if (current && key === "pontuacao_parcial") { current.pontuacao_parcial = value === "null" ? null : Number(value); lastField = null; continue; }
@@ -365,6 +375,7 @@ function parseKuaaQuestion(raw: Record<string, unknown>): KuaaQuestion {
     id: String(raw.id || ""),
     numeracao: typeof raw.numeracao === "number" ? raw.numeracao : undefined,
     dificuldade: ["facil", "media", "dificil"].includes(String(raw.dificuldade)) ? (raw.dificuldade as Difficulty) : undefined,
+    dificuldade_nivel: parseNivel(raw.dificuldade_nivel ?? raw.nivel),
     tempo: typeof raw.tempo === "number" ? raw.tempo : undefined,
     materia: typeof raw.materia === "string" ? raw.materia : undefined,
     assunto: typeof raw.assunto === "string" ? raw.assunto : undefined,
@@ -404,6 +415,7 @@ function kuaaToExamRecord(pkg: KuaaPackage): ExamRecord {
         topico: (q.topico || "").trim() || undefined,
         baseText: q.texto_apoio || undefined,
         difficulty: q.dificuldade,
+        nivel: q.dificuldade_nivel,
         type,
         points: q.pontuacao,
         estimatedMinutes: q.tempo,
@@ -573,6 +585,7 @@ export function serializeKuaaJson(exam: ExamRecord): KuaaPackage {
       id: `${exam.id}Q${String(idx + 1).padStart(3, "0")}`,
       numeracao: idx + 1,
       dificuldade: q.difficulty,
+      dificuldade_nivel: q.nivel,
       tempo: q.estimatedMinutes,
       materia: (q.subject || "").split(/\s*(?:>|—|–)\s*/)[0]?.trim() || q.subject,
       assunto: q.assunto || (q.subject || "").split(/\s*(?:>|—|–)\s*/)[1]?.trim() || undefined,
@@ -610,6 +623,7 @@ export function serializeKuaaText(exam: ExamRecord): string {
       lines.push(`questao: ${q.id}`);
       if (q.numeracao) lines.push(`numeracao: ${q.numeracao}`);
       if (q.dificuldade) lines.push(`dificuldade: ${q.dificuldade}`);
+      if (q.dificuldade_nivel) lines.push(`dificuldade_nivel: ${q.dificuldade_nivel}`);
       if (q.tempo) lines.push(`tempo: ${q.tempo}`);
       if (q.materia) lines.push(`materia: ${q.materia}`);
       if (q.assunto) lines.push(`assunto: ${q.assunto}`);
