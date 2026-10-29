@@ -82,7 +82,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { organizeSubjects } from "@/lib/subjectTaxonomy";
 import { inferExamRole, isUnresolvedRole } from "@/lib/examMetadata";
-import { type ActivationGrant, createActivationCode, createActivationGrant, fetchOnlineUtcTime, isActivationGrantValid, isStudentActivationRequired, monthsForActivationPassword, normalizeActivationValue, STUDENT_ACTIVATION_STORAGE_KEY } from "@/lib/activation";
 import { calcularPontuacaoAdaptativa, calcularPontuacaoRitmoPressao, pesoBase, type QuestaoRespondida, type RitmoPressaoModo } from "@/lib/triAdaptativa";
 import { loadPerformanceHistory, savePerformanceRecord, clearPerformanceHistory, lastNProvas, countProvasByMonth, bestAndWorstSubjects, lastQuizResults, type PerformanceRecord } from "@/lib/performanceHistory";
 import { type BackupPayload, applyBackupPayload, backupFingerprint, buildBackupPayload, clearDriveSession, downloadBackup, exchangeCode, googleAuthUrl, hasNativeDriveAuth, mergePayloads, nativeLogin, nativeSignOut, payloadFingerprint, pkcePair, readDriveToken, readSyncedFingerprint, revokeDriveAccess, saveSyncedFingerprint, uploadBackup, validToken, waitPopupCode } from "@/lib/driveBackup";
@@ -744,67 +743,6 @@ function BrandMark({ compact = false }: { compact?: boolean }) {
   // O logo kuaa vive sozinho; medalhas compartilham a mesma linha do logo.
   void compact;
   return <div className="brand-lockup" aria-label="kuaa"><span className="brand-symbol-shell"><img src="/icons/kuaa-192.png" alt="Símbolo kuaa" className="brand-symbol" /></span></div>;
-}
-
-function readActivationGrant(): ActivationGrant | null {
-  // Migração: se a key nova (kuaa-activation-v2) estiver vazia mas a key antiga
-  // (foco-posse-student-activation-v2) tiver dados, copia para a nova e remove a antiga.
-  try {
-    const current = window.localStorage.getItem(STUDENT_ACTIVATION_STORAGE_KEY);
-    if (!current) {
-      const legacy = window.localStorage.getItem("foco-posse-student-activation-v2");
-      if (legacy) {
-        window.localStorage.setItem(STUDENT_ACTIVATION_STORAGE_KEY, legacy);
-        window.localStorage.removeItem("foco-posse-student-activation-v2");
-      }
-    }
-    // Mesma lógica para o código de ativação legado (foco-posse-student-activation-code-v1 -> kuaa-activation-code-v1).
-    const codeCurrent = window.localStorage.getItem("kuaa-activation-code-v1");
-    if (!codeCurrent) {
-      const legacyCode = window.localStorage.getItem("foco-posse-student-activation-code-v1");
-      if (legacyCode) {
-        window.localStorage.setItem("kuaa-activation-code-v1", legacyCode);
-        window.localStorage.removeItem("foco-posse-student-activation-code-v1");
-      }
-    }
-  } catch { /* ignora se localStorage indisponível */ }
-  try {
-    const raw = JSON.parse(window.localStorage.getItem(STUDENT_ACTIVATION_STORAGE_KEY) || "null") as Partial<ActivationGrant> | null;
-    if (!raw || typeof raw.expiresAt !== "string" || typeof raw.activatedAt !== "string" || typeof raw.months !== "number") return null;
-    return { activatedAt: raw.activatedAt, expiresAt: raw.expiresAt, months: raw.months };
-  } catch { return null; }
-}
-
-function formatActivationDate(value: string) {
-  const date = new Date(value);
-  return Number.isFinite(date.getTime()) ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(date) : "data indisponível";
-}
-
-function StudentTimeCheck() {
-  return <main className="student-activation-screen"><section className="student-activation-card student-time-check"><div className="student-activation-brand"><BrandMark /></div><p className="eyebrow">VERIFICAÇÃO DE DATA</p><h1>Preparando seu acervo.</h1><p>O aplicativo está conferindo a data para manter a ativação atualizada.</p><span className="time-check-indicator" aria-label="Verificando data" /></section></main>;
-}
-
-function StudentActivationGate({ currentGrant, now, onActivate }: { currentGrant: ActivationGrant | null; now: Date; onActivate: (grant: ActivationGrant) => void }) {
-  const [code] = useState(() => {
-    const stored = normalizeActivationValue(window.localStorage.getItem("kuaa-activation-code-v1") || "");
-    if (stored.length === 5) return stored;
-    const generated = createActivationCode();
-    window.localStorage.setItem("kuaa-activation-code-v1", generated);
-    return generated;
-  });
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const activate = () => {
-    const months = monthsForActivationPassword(code, password);
-    if (!months) {
-      setError("A senha não corresponde ao código deste dispositivo.");
-      return;
-    }
-    const grant = createActivationGrant(months, currentGrant, now);
-    window.localStorage.setItem(STUDENT_ACTIVATION_STORAGE_KEY, JSON.stringify(grant));
-    onActivate(grant);
-  };
-  return <main className="student-activation-screen"><section className="student-activation-card"><div className="student-activation-brand"><BrandMark /></div><p className="eyebrow">ATIVAÇÃO DO DISPOSITIVO</p><h1>Continue seu estudo.</h1><p>Informe este código à administração e digite abaixo a senha de ativação recebida. A senha define por quantos meses o aplicativo ficará liberado.</p><div className="activation-code"><span>CÓDIGO DE ATIVAÇÃO</span><strong>{code}</strong></div><label className="activation-password">SENHA DE ATIVAÇÃO<input value={password} onChange={(event) => { setPassword(normalizeActivationValue(event.target.value)); setError(""); }} autoCapitalize="characters" autoComplete="off" maxLength={5} placeholder="ABCDE" aria-describedby={error ? "activation-error" : undefined} /></label>{error && <p id="activation-error" className="activation-error">{error}</p>}<Button className="lime-button" disabled={password.length !== 5} onClick={activate}>Ativar aplicativo</Button><small>O código e a senha possuem cinco caracteres, usando letras maiúsculas e números de 1 a 9. Após a validade, o mesmo código pode receber uma nova senha.</small></section></main>;
 }
 
 function StatCard({ value, label, helper, accent }: { value: string; label: string; helper: string; accent?: boolean }) {
@@ -2573,7 +2511,6 @@ export default function Home() {
   const device = requestedDevice === "phone" ? "phone" : requestedDevice === "tablet" ? "tablet" : "desktop";
   const [view, setView] = useState<View>("student");
   const nativeStudentShell = studentOnly && (window.location.protocol === "capacitor:" || Boolean((window as Window & { Capacitor?: unknown }).Capacitor));
-  const [activationGrant, setActivationGrant] = useState<ActivationGrant | null>(() => readActivationGrant());
   const [termsGate, setTermsGate] = useState<{ status: "checking" | "show" | "ok"; app: string }>({ status: "checking", app: APP_VERSION_FALLBACK });
   useEffect(() => {
     let on = true;
@@ -2584,9 +2521,6 @@ export default function Home() {
     }).catch(() => { if (on) setTermsGate({ status: "show", app: APP_VERSION_FALLBACK }); });
     return () => { on = false; };
   }, []);
-  const forceActivationPreview = startup.get("activation") === "preview";
-  const [activationClock, setActivationClock] = useState<{ now: Date; source: "checking" | "online" | "local" }>(() => ({ now: new Date(), source: studentOnly && !forceActivationPreview ? "checking" : "local" }));
-  const activationRequired = studentOnly && (forceActivationPreview || isStudentActivationRequired(activationClock.now));
   const [exams, setExams] = useState<ExamRecord[]>(() => {
     const saved = window.localStorage.getItem("kuaa-exams");
     if (saved) { try { const parsed = JSON.parse(saved) as ExamRecord[]; if (Array.isArray(parsed) && parsed.length) return parsed; } catch { window.localStorage.removeItem("kuaa-exams"); } }
@@ -2658,25 +2592,9 @@ export default function Home() {
     document.documentElement.dataset.mode = studentOnly ? "student" : "full";
     document.documentElement.dataset.device = device;
   }, [device, studentOnly]);
-  useEffect(() => {
-    if (!studentOnly || forceActivationPreview) return;
-    let mounted = true;
-    const controller = new AbortController();
-    const fallback = window.setTimeout(() => {
-      controller.abort();
-      if (mounted) setActivationClock({ now: new Date(), source: "local" });
-    }, 3000);
-    fetchOnlineUtcTime(controller.signal)
-      .then((now) => { if (mounted) setActivationClock({ now, source: "online" }); })
-      .catch(() => { if (mounted) setActivationClock({ now: new Date(), source: "local" }); })
-      .finally(() => window.clearTimeout(fallback));
-    return () => { mounted = false; controller.abort(); window.clearTimeout(fallback); };
-  }, [forceActivationPreview, studentOnly]);
   const openStudent = (examId: string) => { setSelectedExamId(examId); setView("student"); };
   const openReview = (examId: string) => { setSelectedExamId(examId); setView("admin"); window.localStorage.setItem("kuaa-review-target", examId); };
   if (termsGate.status === "checking") return null;
   if (termsGate.status === "show") return <TermsGate appVersion={termsGate.app} onAccepted={() => setTermsGate((s) => ({ ...s, status: "ok" }))} />;
-  if (studentOnly && activationClock.source === "checking" && !forceActivationPreview) return <StudentTimeCheck />;
-  if (activationRequired && !isActivationGrantValid(activationGrant, activationClock.now)) return <StudentActivationGate currentGrant={activationGrant} now={activationClock.now} onActivate={setActivationGrant} />;
   return <div className="app-shell">{!studentOnly && <><aside className="app-sidebar"><BrandMark /><nav aria-label="Áreas da prévia" className="sidebar-nav"><button className={view === "admin" ? "is-active" : ""} onClick={() => setView("admin")}><LayoutDashboard size={19} /><span>Intermediadora</span><i>01</i></button><button className={view === "student" ? "is-active" : ""} onClick={() => setView("student")}><GraduationCap size={19} /><span>Estudante</span><i>02</i></button></nav><div className="sidebar-bottom"><div className="backup-card"><Archive size={18} /><p><strong>Dados locais</strong><span>Revisão sem internet</span></p></div><p className="sidebar-note">A IA é usada apenas quando você decide enviar o par de PDFs a um serviço externo. A revisão e o estudo continuam locais.</p></div></aside><header className="mobile-header"><BrandMark compact /><div className="mobile-tabs"><button className={view === "admin" ? "is-active" : ""} onClick={() => setView("admin")}>Intermediadora</button><button className={view === "student" ? "is-active" : ""} onClick={() => setView("student")}>Estudante</button></div></header></>}<div className="app-main"><><StudentPreview exams={exams} selectedExamId={selectedExamId} onChange={setExams} onSelected={setSelectedExamId} attempts={attempts} quickEvents={quickEvents} onAttempt={(attempt) => setAttempts((items) => [...items, attempt])} onQuickEvent={(event) => setQuickEvents((items) => [...items, event])} onMerged={({ attempts: a, quickEvents: q }) => { if (a) setAttempts((prev) => (a.length !== prev.length ? a : prev)); if (q) setQuickEvents((prev) => (q.length !== prev.length ? q : prev)); }} /><StudentCredit /></></div></div>;
 }
