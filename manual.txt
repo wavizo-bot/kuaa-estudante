@@ -1,0 +1,66 @@
+MANUAL - kuaa Estudante (repo GitHub: wavizo-bot/kuaa-estudante)
+Ultima atualizacao: 29/10/2026
+
+1. O QUE E
+App de estudo para concursos e provas do publico: acervo de provas e quizzes
+OFFLINE (contrato "kuaa/" em JSON), modos prova / questao rapida / ritmo /
+quiz, filtros por banca e cargo, nivel de dificuldade alinhado a BNCC
+(motor em shared/dificuldade/) e backup OPCIONAL no Google Drive (PKCE +
+escopo minimo drive.appdata). Web (Vite + React + Tailwind) empacotada em
+Android (Capacitor -> AAB) e Windows (WebView2 MSIX no repo irmao
+Kuaa-app-MSIX).
+
+2. ESTRUTURA DE PASTAS/ARQUIVOS
+- client/           -> app React (src/pages, src/lib, src/components)
+- client/public/    -> pacote inicial de provas + 3 documentos legais
+                       (politica-privacidade.html, termos-de-servico.html,
+                       aviso-legal.html) servidos pelo proprio app
+- shared/           -> codigo compartilhado (dificuldade/ = motor com testes
+                       de paridade; constantes kuaaFormat)
+- android/          -> projeto Capacitor (applicationId e versao em
+                       android/app/build.gradle: versionCode + versionName)
+- entregas/         -> play\ = AAB recente (e play\historico\ = anteriores);
+                       windows\ = MSIX recente do app
+- manual.txt        -> este arquivo (nao versionado - regra 3.1)
+- CHANGES.md, README.md -> versionados
+
+3. IDENTIDADE DAS LOJAS
+- Google Play: app publicado (alpha); applicationId e versao em
+  android/app/build.gradle. PUBLICADA: versionCode 14 / versionName 1.8
+  (build de 20/10/2026, AAB app-release-vC14-1.8.aab em entregas\play\).
+- Microsoft Store (Partner Center): app irmão Kuaa-app-MSIX
+  (identidade wavizo.Kuaa). ATENCAO: os MSIX em entregas\windows\ ainda sao
+  da versao ANTERIOR a remocao da ativacao - refazer build antes do proximo
+  envio (registra nova versao quadrupla maior).
+
+4. CREDENCIAIS (ONDE ESTAO - NUNCA O CONTEUDO)
+- Google OAuth: client "Desktop app" embutido no fonte
+  (client/src/lib/driveBackup.ts). Segredo de app instalado NAO e
+  confidencial (regra 3.3): compensar com PKCE + escopo drive.appdata +
+  consentimento explicito. Clients Android sao proprios (package + SHA-1).
+- Chave da IA usada na geracao de questoes: scripts\.deepseek-key na raiz do
+  ecossistema (NUNCA versionado; ver manual da raiz C:\APPS\Kuaa\manual.txt).
+- Sem outros segredos no repositorio (varredura 29/10/2026: 0 achados).
+
+5. VERSOES PUBLICADAS E PENDENTES
+- Publicada: 1.8 (versionCode 14) na Play.
+- Pendente de envio: nenhuma.
+- Historico completo: CHANGES.md (versionado) + log.txt (local).
+
+6. COMO EXECUTAR E COMO BUILDAR
+- Desenvolvimento: pnpm install; pnpm dev.
+- Build web: pnpm build (BARRA DE ACEITE: exit 0; o tsc tem ~7 erros
+  PRE-EXISTENTES - nao usar tsc como barra, ver ETAPA 7 do log da raiz).
+- Android: build web + cap sync + gradlew assembleRelease (R8 optimize,
+  ver regra A1); artefato final testado no aparelho antes de enviar.
+- Windows/MSIX: build no repo irmao Kuaa-app-MSIX (a fonte web e copiada
+  para la pelo sync-msix.ps1, agora em scripts\ na raiz do ecossistema).
+
+7. ARMADILHAS
+- node_modules usa junctions do pnpm com caminho ABSOLUTO: se a pasta do
+  projeto for movida, os junctions quebram - recriar (ETAPA 6 do log raiz).
+- shared/dificuldade/ e o motor de dificuldade com testes de paridade
+  (pnpm test no kuaa-admin): NAO quebrar o contrato kuaaFormat.
+- log.txt e LOCAL (regra 3.1) - no git ficam apenas manual/README/CHANGES.
+- remocao da ativacao/expiracao (ETAPA 60, 20/10/2026): const.ts,
+  activation.ts e trechos do Home.tsx ja sao historia - nao restaurar.
